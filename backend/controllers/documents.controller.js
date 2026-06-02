@@ -80,7 +80,7 @@ export async function uploadDocument(req, res, next) {
       throw new AppError('Title, department, and category are required.', 400);
     }
 
-    const filePath = req.file.path.replace(/\\/g, '/');
+    const filePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, '/');
     const tagsArr  = tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [];
 
     const { rows } = await pool.query(
