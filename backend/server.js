@@ -60,6 +60,18 @@ app.use('/api/audit',       auditRoutes);
 app.use('/api/users',       userRoutes);
 app.use('/api/reports',     reportRoutes);
 
+// Root path friendly response
+app.get('/', (_req, res) => {
+  res.json({
+    message: 'Welcome to the CRDDMS API Backend Service',
+    status: 'online',
+    version: '1.0.0',
+    documentation: 'All API routes are prefixed with /api',
+    healthCheck: '/api/health',
+    frontend: 'https://yuva-teja-gaduthuri.github.io/CRDDMS/'
+  });
+});
+
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
 
