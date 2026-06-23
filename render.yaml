@@ -1,3 +1,7 @@
+databases:
+  - name: crddms-db
+    plan: free
+
 services:
   - type: web
     name: crddms-api
@@ -5,15 +9,17 @@ services:
     region: oregon
     plan: free
     buildCommand: cd backend && npm install
-    startCommand: cd backend && npm start
+    startCommand: cd backend && npm run migrate && npm start
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false  # You'll set this manually in Render dashboard
+        fromDatabase:
+          name: crddms-db
+          property: connectionString
       - key: JWT_SECRET
-        sync: false
+        generateValue: true
       - key: JWT_EXPIRES_IN
         value: 24h
       - key: FRONTEND_URL
-        value: https://yuva-teja-gaduthuri.github.io
+        value: https://sahithya-behara.github.io

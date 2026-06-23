@@ -69,7 +69,7 @@ app.get('/', (_req, res) => {
     version: '1.0.0',
     documentation: 'All API routes are prefixed with /api',
     healthCheck: '/api/health',
-    frontend: 'https://yuva-teja-gaduthuri.github.io/CRDDMS/'
+    frontend: 'https://sahithya-behara.github.io/CRDDMS/'
   });
 });
 

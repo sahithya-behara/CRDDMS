@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": "https://yuva-teja-gaduthuri.github.io/CRDDMS",
+  "homepage": "https://sahithya-behara.github.io/CRDDMS",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
