@@ -23,6 +23,11 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  const register = useCallback(async (name, email, password, role, department_id) => {
+    const { data } = await api.post('/auth/register', { name, email, password, role, department_id });
+    return data;
+  }, []);
+
   const logout = useCallback(async () => {
     try { await api.post('/auth/logout'); } catch {}
     localStorage.removeItem('crddms_token');
@@ -32,7 +37,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, isAuthenticated: !!token }}>
       {children}
     </AuthContext.Provider>
   );

@@ -5,6 +5,7 @@ import pool from '../config/db.js';
 import path from 'path';
 import { logAction } from '../services/audit.service.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { extractText } from '../services/ocr.service.js';
 
 // ── GET /api/documents ──────────────────────────────────
 export async function listDocuments(req, res, next) {
@@ -104,6 +105,34 @@ export async function uploadDocument(req, res, next) {
 
     await logAction({ userId: req.user.id, action: 'upload', documentId: rows[0].id, ip: req.ip,
                       details: { file: req.file.originalname } });
+
+    // Automatically trigger OCR for images asynchronously
+    const ext = path.extname(req.file.originalname).replace('.', '').toLowerCase();
+    const imageTypes = ['jpg', 'jpeg', 'png'];
+    if (imageTypes.includes(ext)) {
+      const absolutePath = path.resolve(process.cwd(), filePath);
+      const docId = rows[0].id;
+      extractText(absolutePath, ext)
+        .then(async (ocrResult) => {
+          try {
+            await pool.query(
+              `INSERT INTO ocr_extracted_text (document_id, extracted_text, confidence_score)
+               VALUES ($1, $2, $3)
+               ON CONFLICT (document_id) DO UPDATE
+               SET extracted_text = EXCLUDED.extracted_text,
+                   confidence_score = EXCLUDED.confidence_score,
+                   processed_at = NOW()`,
+              [docId, ocrResult.text, ocrResult.confidence]
+            );
+            console.log(`🤖 Auto-OCR completed for document ID: ${docId}`);
+          } catch (dbErr) {
+            console.error(`❌ Failed to save auto-OCR text for document ID: ${docId}:`, dbErr.message);
+          }
+        })
+        .catch((ocrErr) => {
+          console.error(`❌ Failed to process auto-OCR for document ID: ${docId}:`, ocrErr.message);
+        });
+    }
 
     res.status(201).json({ success: true, document: rows[0] });
   } catch (err) { next(err); }

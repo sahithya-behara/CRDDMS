@@ -5,13 +5,19 @@ import { AppError } from '../middleware/errorHandler.js';
 // GET /api/archive
 export async function listArchives(req, res, next) {
   try {
+    const user = req.user;
+    const isScoped = user && (user.role === 'dept_head' || user.role === 'faculty' || user.role === 'staff');
+    const params = isScoped ? [user.department_id] : [];
+
     const { rows } = await pool.query(
       `SELECT ar.*, ud.title, ud.file_name, ud.file_type, ud.department_id, d.department_name, u.name AS archived_by_name
        FROM archive_records ar
        JOIN uploaded_documents ud ON ar.document_id = ud.id
        LEFT JOIN departments d    ON ud.department_id = d.id
        LEFT JOIN users u          ON ar.archived_by   = u.id
-       ORDER BY ar.archive_date DESC`
+       ${isScoped ? 'WHERE ud.department_id = $1' : ''}
+       ORDER BY ar.archive_date DESC`,
+      params
     );
     res.json({ success: true, archives: rows });
   } catch (err) { next(err); }

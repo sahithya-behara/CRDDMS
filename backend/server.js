@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import pool from './config/db.js';
 
 dotenv.config();
 
@@ -74,6 +75,31 @@ app.get('/', (_req, res) => {
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
+
+// Public Stats endpoint (real-time data for homepage screen)
+app.get('/api/public/stats', async (req, res, next) => {
+  try {
+    const [deptCount, studentCount, facultyCount, docCount, ocrCount, storageSum] = await Promise.all([
+      pool.query('SELECT COUNT(*)::int AS count FROM departments'),
+      pool.query('SELECT COUNT(*)::int AS count FROM students'),
+      pool.query('SELECT COUNT(*)::int AS count FROM faculty'),
+      pool.query('SELECT COUNT(*)::int AS count FROM uploaded_documents'),
+      pool.query('SELECT COUNT(*)::int AS count FROM ocr_extracted_text'),
+      pool.query('SELECT COALESCE(SUM(file_size), 0)::bigint AS sum FROM uploaded_documents'),
+    ]);
+    res.json({
+      success: true,
+      departments: deptCount.rows[0].count,
+      students: studentCount.rows[0].count,
+      faculty: facultyCount.rows[0].count,
+      documents: docCount.rows[0].count,
+      ocrProcessed: ocrCount.rows[0].count,
+      storageBytes: storageSum.rows[0].sum,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ── Global Error Handler ───────────────────────────────────
 app.use(errorHandler);

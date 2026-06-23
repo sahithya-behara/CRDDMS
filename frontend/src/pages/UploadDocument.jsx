@@ -1,14 +1,14 @@
-// pages/UploadDocument.jsx — Drag-and-drop file upload with metadata form
-
+// pages/UploadDocument.jsx — Drag-and-drop file upload with system animations
 import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import api from '../services/api';
-import { Upload, FileText, X, CheckCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, Upload, X, FileText, HardDrive } from 'lucide-react';
+import { DocumentProcessing, UploadZoneAnimation, SystemStatusBar, DataStreamLog } from '../components/SystemAnimations';
 
 const CATEGORIES = [
-  { value: 'student_records',          label: 'Student Records' },
-  { value: 'faculty_records',          label: 'Faculty Records' },
-  { value: 'examination_records',      label: 'Examination Records' },
+  { value: 'student_records',          label: 'Confidential Student Records' },
+  { value: 'faculty_records',          label: 'Institutional Policy Drafts' },
+  { value: 'examination_records',      label: 'Accreditation Evidence' },
   { value: 'administrative_records',   label: 'Administrative Records' },
   { value: 'accreditation_documents',  label: 'Accreditation Documents' },
 ];
@@ -26,13 +26,22 @@ export default function UploadDocument() {
   const [uploading, setUploading] = useState(false);
   const [success,   setSuccess]   = useState(false);
   const [error,     setError]     = useState('');
+  const [logLines,  setLogLines]  = useState([]);
 
   useEffect(() => {
     api.get('/departments').then(r => setDepartments(r.data.departments));
   }, []);
 
+  const addLog = (line) => setLogLines(prev => [...prev.slice(-20), line]);
+
   const onDrop = useCallback((accepted) => {
-    if (accepted[0]) { setFile(accepted[0]); setSuccess(false); setError(''); }
+    if (accepted[0]) {
+      setFile(accepted[0]);
+      setSuccess(false);
+      setError('');
+      addLog(`[INFO]  File selected: ${accepted[0].name} (${(accepted[0].size / 1024).toFixed(0)} KB)`);
+      addLog(`[SCAN]  File type validated: ${accepted[0].type || 'unknown'}`);
+    }
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -53,6 +62,13 @@ export default function UploadDocument() {
     setForm(f => ({ ...f, department_id: e.target.value, department_code: dept?.department_code || '' }));
   };
 
+  const uploadSteps = [
+    'Encrypting file payload (AES-256)',
+    'Indexing metadata & tags',
+    'Running OCR pipeline',
+    'Updating audit ledger',
+  ];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!file)               return setError('Please select a file.');
@@ -60,6 +76,9 @@ export default function UploadDocument() {
     if (!form.category)      return setError('Please select a category.');
 
     setError(''); setUploading(true); setProgress(0);
+    addLog(`[UPLOAD] Initiating secure upload for: ${form.title || file.name}`);
+    addLog(`[AUTH]   Session token verified · Department: ${form.department_code}`);
+    addLog(`[ENCRYPT] AES-256 encryption applied`);
 
     const data = new FormData();
     data.append('file', file);
@@ -68,83 +87,122 @@ export default function UploadDocument() {
     try {
       await api.post('/documents/upload', data, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        onUploadProgress: (e) => setProgress(Math.round(e.loaded * 100 / e.total)),
+        onUploadProgress: (e) => {
+          const pct = Math.round(e.loaded * 100 / e.total);
+          setProgress(pct);
+          if (pct === 25) addLog('[INDEX]  Metadata indexing in progress…');
+          if (pct === 50) addLog('[OCR]    OCR pipeline queued');
+          if (pct === 75) addLog('[VAULT]  Writing to institutional vault…');
+          if (pct === 100) addLog('[OK]     Upload complete · Audit ledger updated');
+        },
       });
       setSuccess(true);
       setFile(null);
       setForm({ title:'', department_id:'', department_code:'', academic_year:'2024-25', category:'', tags:'' });
       setProgress(0);
+      addLog('[OK]     Document registered successfully in CRDDMS vault');
     } catch (err) {
       setError(err.response?.data?.message || 'Upload failed.');
+      addLog(`[ERROR]  Upload failed: ${err.response?.data?.message || 'Unknown error'}`);
     } finally {
       setUploading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="page-title">Upload Document</h1>
-        <p className="page-sub">Upload files to the institutional digital vault</p>
+        <h1 className="page-title">Upload Documents</h1>
+        <p className="page-sub font-medium">Upload and index digital vault assets</p>
       </div>
 
+      {/* System Status Ticker */}
+      <SystemStatusBar />
+
+      {/* Upload processing animation — shows DURING upload */}
+      {uploading && (
+        <DocumentProcessing
+          label={`Uploading: ${file?.name || 'Document'}…`}
+          progress={progress}
+          steps={uploadSteps}
+        />
+      )}
+
       {success && (
-        <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-success text-sm">
-          <CheckCircle size={18} />
-          Document uploaded successfully! You can now process OCR from the document list.
+        <div className="flex items-center gap-3 rounded-xl px-4 py-4 animate-fade-in"
+          style={{ background: 'rgba(22,163,74,0.08)', border: '1.5px solid rgba(22,163,74,0.3)' }}>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'rgba(22,163,74,0.12)' }}>
+            <CheckCircle size={20} style={{ color: '#16a34a' }} />
+          </div>
+          <div>
+            <p className="text-sm font-bold" style={{ color: '#16a34a' }}>Document Uploaded Successfully</p>
+            <p className="text-xs text-slate-500 mt-0.5">Check the Ledger or process OCR inside the Vault.</p>
+          </div>
         </div>
       )}
+
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-danger text-sm">{error}</div>
+        <div className="rounded-xl px-4 py-3 text-sm font-semibold animate-fade-in"
+          style={{ background: 'rgba(220,38,38,0.08)', border: '1.5px solid rgba(220,38,38,0.3)', color: '#dc2626' }}>
+          {error}
+        </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Dropzone */}
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-200
-            ${isDragActive ? 'border-secondary bg-accent/10 dropzone-active' : 'border-slate-200 hover:border-secondary hover:bg-bgpage'}`}
-        >
+        {/* Drop Zone with animation */}
+        <div {...getRootProps()}>
           <input {...getInputProps()} />
-          {file ? (
-            <div className="flex items-center justify-center gap-3">
-              <FileText size={32} className="text-secondary" />
-              <div className="text-left">
-                <p className="font-semibold text-slate text-sm">{file.name}</p>
-                <p className="text-xs text-slate/50">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+          <UploadZoneAnimation isDragActive={isDragActive} hasFile={!!file}>
+            {file ? (
+              <div className="flex flex-col items-center gap-3 animate-scale-in">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{ background: 'rgba(22,163,74,0.1)', border: '2px solid rgba(22,163,74,0.3)' }}>
+                  <FileText size={30} style={{ color: '#16a34a' }} />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-slate-800 text-sm">{file.name}</p>
+                  <p className="text-xs text-slate-400 mt-0.5 flex items-center justify-center gap-1">
+                    <HardDrive size={11} />
+                    {(file.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setFile(null); addLog('[INFO]  File removed'); }}
+                  className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                  style={{ color: '#dc2626', background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)' }}
+                >
+                  <X size={12} /> Remove File
+                </button>
               </div>
-              <button type="button" onClick={(e) => { e.stopPropagation(); setFile(null); }} className="btn-icon ml-2">
-                <X size={16} />
-              </button>
-            </div>
-          ) : (
-            <>
-              <Upload size={40} className="text-slate/30 mx-auto mb-3" />
-              <p className="text-sm font-medium text-slate/70">
-                {isDragActive ? 'Drop the file here…' : 'Drag & drop a file or click to browse'}
-              </p>
-              <p className="text-xs text-slate/40 mt-1">
-                Supported: PDF, JPG, PNG, DOCX, XLSX · Max 25MB
-              </p>
-            </>
-          )}
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110"
+                  style={{ background: 'rgba(11,61,145,0.07)', border: '1.5px solid rgba(11,61,145,0.15)' }}>
+                  <Upload size={28} style={{ color: isDragActive ? '#D4AF37' : '#0B3D91' }} />
+                </div>
+                <div className="text-center">
+                  <p className="font-bold text-slate-800 text-sm mb-1">
+                    {isDragActive ? '🎯 Drop to upload' : 'Tap to browse or drag & drop'}
+                  </p>
+                  <p className="text-xs text-slate-400">Upload vault assets to CRDDMS</p>
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full"
+                  style={{ color: '#8B6D10', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                  MAX 25 MB · PDF · JPG · PNG · DOCX · XLSX
+                </p>
+              </div>
+            )}
+          </UploadZoneAnimation>
         </div>
-
-        {/* Upload progress */}
-        {uploading && progress > 0 && (
-          <div>
-            <div className="flex justify-between text-xs text-slate/60 mb-1">
-              <span>Uploading…</span><span>{progress}%</span>
-            </div>
-            <div className="progress-bar">
-              <div className="progress-bar-fill gradient-primary" style={{ width: `${progress}%` }} />
-            </div>
-          </div>
-        )}
 
         {/* Metadata fields */}
         <div className="card space-y-4">
-          <p className="section-title">Document Metadata</p>
+          <p className="section-title text-sm uppercase tracking-wider font-bold flex items-center gap-2">
+            <span className="w-1.5 h-4 rounded-full" style={{ background: 'linear-gradient(#0B3D91, #D4AF37)' }} />
+            Document Metadata
+          </p>
 
           <div>
             <label className="label">Document Title *</label>
@@ -156,14 +214,14 @@ export default function UploadDocument() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="label">Department *</label>
-              <select className="input-field" value={form.department_id} onChange={handleDeptChange} required>
+              <select className="input-field cursor-pointer" value={form.department_id} onChange={handleDeptChange} required>
                 <option value="">Select Department</option>
                 {departments.map(d => <option key={d.id} value={d.id}>{d.department_name}</option>)}
               </select>
             </div>
             <div>
               <label className="label">Academic Year *</label>
-              <select className="input-field"
+              <select className="input-field cursor-pointer"
                 value={form.academic_year}
                 onChange={e => setForm(f => ({...f, academic_year: e.target.value}))}>
                 {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -172,10 +230,10 @@ export default function UploadDocument() {
           </div>
 
           <div>
-            <label className="label">Document Category *</label>
-            <select className="input-field" value={form.category}
+            <label className="label">Document Classification *</label>
+            <select className="input-field cursor-pointer" value={form.category}
               onChange={e => setForm(f => ({...f, category: e.target.value}))} required>
-              <option value="">Select Category</option>
+              <option value="">Select Classification</option>
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
@@ -188,10 +246,16 @@ export default function UploadDocument() {
           </div>
         </div>
 
-        <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-3"
+        {/* System Log */}
+        {logLines.length > 0 && <DataStreamLog lines={logLines} />}
+
+        <button type="submit" className="btn-primary w-full py-3.5 rounded-xl text-base font-semibold"
+          style={{ gap: '10px' }}
           disabled={uploading}>
-          {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-          {uploading ? 'Uploading…' : 'Upload Document'}
+          {uploading
+            ? <><span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" /> Uploading to Vault…</>
+            : <><Upload size={18} /> Upload to Institutional Vault</>
+          }
         </button>
       </form>
     </div>

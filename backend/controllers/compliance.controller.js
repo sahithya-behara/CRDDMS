@@ -6,9 +6,22 @@ import { AppError } from '../middleware/errorHandler.js';
 export async function listCompliance(req, res, next) {
   try {
     const { authority } = req.query;
+    const user = req.user;
+    const isScoped = user && (user.role === 'dept_head' || user.role === 'faculty' || user.role === 'staff');
+
     const params = [];
-    let where = '';
-    if (authority) { params.push(authority); where = `WHERE ar.authority = $1`; }
+    const filters = [];
+
+    if (authority) {
+      params.push(authority);
+      filters.push(`ar.authority = $${params.length}`);
+    }
+    if (isScoped) {
+      params.push(user.department_id);
+      filters.push(`ud.department_id = $${params.length}`);
+    }
+
+    const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
     const { rows } = await pool.query(
       `SELECT ar.*, ud.title, ud.file_name, ud.status, ud.department_id, d.department_name

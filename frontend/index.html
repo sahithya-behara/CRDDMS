@@ -8,7 +8,132 @@
     <title>CRDDMS — College Records & Document Management</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700;800&family=Courier+Prime&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800;900&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+
+    <!-- CRDDMS Boot Splash — pure vanilla JS, completely outside React -->
+    <style>
+      #crddms-splash {
+        position: fixed; inset: 0; z-index: 99999;
+        background: linear-gradient(135deg, #072558 0%, #0B3D91 55%, #0d3580 100%);
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        font-family: 'Inter', system-ui, sans-serif;
+        transition: opacity 0.5s ease;
+      }
+      #crddms-splash.fade-out { opacity: 0; pointer-events: none; }
+      .splash-grid {
+        position: absolute; inset: 0;
+        background-image: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 32px 32px;
+      }
+      .splash-orbit {
+        position: absolute; top: 50%; left: 50%; border-radius: 50%;
+        border: 1px solid rgba(212,175,55,0.08);
+        transform: translate(-50%, -50%);
+      }
+      @keyframes splashOrbitCW  { to { transform: translate(-50%,-50%) rotate(360deg); } }
+      @keyframes splashOrbitCCW { to { transform: translate(-50%,-50%) rotate(-360deg); } }
+      @keyframes splashSpin     { to { transform: rotate(360deg); } }
+      @keyframes splashCheck    { from { opacity:0; transform:scale(0.4); } to { opacity:1; transform:scale(1); } }
+      @keyframes splashPulse    { 0%,100% { box-shadow: 0 0 0 0 rgba(212,175,55,0.3); }
+                                  50%     { box-shadow: 0 0 0 12px rgba(212,175,55,0); } }
+      .splash-logo-ring {
+        animation: splashPulse 2s ease-in-out infinite;
+      }
+      .splash-spinner {
+        border: 2px solid #D4AF37; border-top-color: transparent; border-radius: 50%;
+        width: 18px; height: 18px; flex-shrink: 0;
+        animation: splashSpin 0.8s linear infinite;
+      }
+    </style>
+    <script>
+      (function () {
+        // Inject splash immediately before React loads
+        var splash = document.createElement('div');
+        splash.id = 'crddms-splash';
+        splash.innerHTML = `
+          <div class="splash-grid"></div>
+          <div class="splash-orbit" style="width:300px;height:300px;animation:splashOrbitCW 8s linear infinite;"></div>
+          <div class="splash-orbit" style="width:460px;height:460px;animation:splashOrbitCCW 12s linear infinite;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:48px;position:relative;z-index:2;animation:splashCheck 0.6s cubic-bezier(0.16,1,0.3,1) forwards;">
+            <div style="position:relative;margin-bottom:20px;">
+              <div class="splash-logo-ring" style="position:absolute;inset:-12px;border-radius:50%;border:2px solid rgba(212,175,55,0.3);"></div>
+              <div style="width:80px;height:80px;border-radius:24px;background:linear-gradient(135deg,rgba(212,175,55,0.2),rgba(212,175,55,0.05));border:2px solid rgba(212,175,55,0.4);display:flex;align-items:center;justify-content:center;box-shadow:0 0 40px rgba(212,175,55,0.2);">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+              </div>
+            </div>
+            <h1 style="font-family:'Space Grotesk',sans-serif;font-size:2.5rem;font-weight:800;color:#fff;letter-spacing:-0.04em;margin:0 0 6px;">CRDDMS</h1>
+            <p style="color:rgba(212,175,55,0.8);font-size:0.7rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;margin:0;">JNTU-GV · Institutional Digital Vault</p>
+          </div>
+          <div id="splash-panel" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:24px 32px;min-width:340px;position:relative;z-index:2;backdrop-filter:blur(8px);">
+            <p style="color:rgba(255,255,255,0.4);font-size:0.65rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;margin:0 0 16px;">System Initialization</p>
+            <div id="splash-checks" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+            <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:99px;overflow:hidden;">
+              <div id="splash-bar" style="height:100%;border-radius:99px;width:0%;background:linear-gradient(90deg,#0B3D91,#D4AF37);transition:width 0.35s cubic-bezier(0.16,1,0.3,1);"></div>
+            </div>
+            <p id="splash-pct" style="font-size:0.7rem;color:rgba(255,255,255,0.3);text-align:right;margin:6px 0 0;font-family:'JetBrains Mono',monospace;">0%</p>
+          </div>
+          <p style="position:absolute;bottom:24px;color:rgba(255,255,255,0.2);font-size:0.65rem;font-family:'JetBrains Mono',monospace;z-index:2;">CRDDMS v2.1 · Build 2026.06 · JNTU-GV © 2026</p>
+        `;
+        document.body.appendChild(splash);
+
+        var checks = [
+          'Authenticating Session',
+          'Loading Institutional Vault',
+          'Verifying SSL Certificate',
+          'Initializing OCR Engine v2.1',
+          'Syncing Department Registry'
+        ];
+
+        var checksEl = document.getElementById('splash-checks');
+        var barEl    = document.getElementById('splash-bar');
+        var pctEl    = document.getElementById('splash-pct');
+
+        // Render initial check rows
+        checks.forEach(function (label) {
+          var row = document.createElement('div');
+          row.style.cssText = 'display:flex;align-items:center;gap:12px;opacity:0.3;transition:opacity 0.3s;';
+          row.innerHTML = `
+            <div class="splash-spinner"></div>
+            <span style="font-size:0.8rem;color:rgba(255,255,255,0.5);font-family:Inter,sans-serif;">${label}</span>
+          `;
+          checksEl.appendChild(row);
+        });
+
+        // Make first one active
+        checksEl.children[0].style.opacity = '1';
+
+        var delay = 0;
+        checks.forEach(function (_, i) {
+          delay += 320;
+          setTimeout(function () {
+            var rows = checksEl.children;
+            // Mark current as done
+            rows[i].style.opacity = '1';
+            rows[i].innerHTML = `
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:splashCheck 0.3s cubic-bezier(0.16,1,0.3,1);flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>
+              <span style="font-size:0.8rem;color:rgba(255,255,255,0.9);font-weight:600;font-family:Inter,sans-serif;">${checks[i]}</span>
+            `;
+            // Activate next
+            if (i + 1 < rows.length) {
+              rows[i + 1].style.opacity = '1';
+            }
+            var pct = Math.round(((i + 1) / checks.length) * 100);
+            barEl.style.width = pct + '%';
+            pctEl.textContent = pct + '%';
+          }, delay);
+        });
+
+        // Fade out and remove splash after all checks + buffer
+        setTimeout(function () {
+          splash.classList.add('fade-out');
+          setTimeout(function () {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 520);
+        }, delay + 350);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

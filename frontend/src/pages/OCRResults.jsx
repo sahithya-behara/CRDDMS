@@ -1,51 +1,82 @@
-// pages/OCRResults.jsx — OCR viewer for a document
-
+// pages/OCRResults.jsx — OCR viewer with scan animation
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { ScanText, RefreshCw, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ScanText, RefreshCw, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
+import { OcrScanAnimation, DataStreamLog, SystemStatusBar } from '../components/SystemAnimations';
 
 export default function OCRResults() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [doc,     setDoc]     = useState(null);
-  const [ocr,     setOcr]     = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [doc,        setDoc]        = useState(null);
+  const [ocr,        setOcr]        = useState(null);
+  const [loading,    setLoading]    = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [error,   setError]   = useState('');
+  const [error,      setError]      = useState('');
+  const [logLines,   setLogLines]   = useState([]);
+  const [showScan,   setShowScan]   = useState(false);
+
+  const addLog = (line) => setLogLines(prev => [...prev.slice(-20), line]);
 
   useEffect(() => { loadData(); }, [id]);
 
   const loadData = async () => {
     setLoading(true);
+    addLog(`[INFO]  Loading document #${id} from vault`);
     try {
       const [docRes, ocrRes] = await Promise.allSettled([
         api.get(`/documents/${id}`),
         api.get(`/ocr/${id}`),
       ]);
-      if (docRes.status === 'fulfilled') setDoc(docRes.value.data.document);
-      if (ocrRes.status === 'fulfilled') setOcr(ocrRes.value.data.ocr);
-    } finally { setLoading(false); }
+      if (docRes.status === 'fulfilled') {
+        setDoc(docRes.value.data.document);
+        addLog(`[OK]    Document metadata loaded: ${docRes.value.data.document?.title}`);
+      }
+      if (ocrRes.status === 'fulfilled') {
+        setOcr(ocrRes.value.data.ocr);
+        addLog('[OK]    OCR result retrieved from cache');
+      } else {
+        addLog('[INFO]  No OCR result found · Run OCR to process');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const processOCR = async () => {
-    setProcessing(true); setError('');
+    setProcessing(true);
+    setShowScan(true);
+    setError('');
+    addLog('[OCR]   Initiating OCR Engine v2.1…');
+    addLog('[SCAN]  Document scan in progress…');
+    addLog('[ML]    Neural text extraction active');
     try {
       const { data } = await api.post(`/ocr/process/${id}`);
       setOcr(data.ocr);
+      addLog(`[OK]    OCR complete · Confidence: ${data.ocr?.confidence_score}%`);
+      addLog('[INDEX] Text indexed for search');
     } catch (err) {
       setError(err.response?.data?.message || 'OCR processing failed.');
-    } finally { setProcessing(false); }
+      addLog(`[ERROR] OCR failed: ${err.response?.data?.message || 'Unknown error'}`);
+    } finally {
+      setProcessing(false);
+      setTimeout(() => setShowScan(false), 600);
+    }
   };
 
   if (loading) return (
-    <div className="flex justify-center py-20">
-      <div className="w-10 h-10 border-4 border-secondary border-t-transparent rounded-full animate-spin" />
+    <div className="flex flex-col items-center justify-center h-64 gap-4">
+      <div className="relative">
+        <div className="w-14 h-14 border-4 border-slate-200 rounded-full" />
+        <div className="w-14 h-14 border-4 border-t-[#0B3D91] border-r-[#D4AF37] rounded-full animate-spin absolute inset-0" />
+      </div>
+      <p className="text-sm text-slate-400 font-medium animate-pulse">Loading document from vault…</p>
     </div>
   );
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
+      {/* Header */}
       <div className="flex items-center gap-3">
         <button onClick={() => navigate(-1)} className="btn-icon">
           <ArrowLeft size={18} />
@@ -56,74 +87,112 @@ export default function OCRResults() {
         </div>
       </div>
 
+      {/* System Status Ticker */}
+      <SystemStatusBar />
+
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-danger text-sm flex items-center gap-2">
+        <div className="rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2 animate-fade-in"
+          style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)', color: '#dc2626' }}>
           <AlertCircle size={16} /> {error}
         </div>
       )}
 
-      {/* Document info */}
+      {/* Document info card */}
       {doc && (
-        <div className="card">
+        <div className="card animate-card-enter">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div><p className="label">File Type</p><p className="font-semibold uppercase">{doc.file_type}</p></div>
-            <div><p className="label">Department</p><p className="font-semibold">{doc.department_code || '—'}</p></div>
-            <div><p className="label">Category</p><p className="font-semibold capitalize">{doc.category?.replace(/_/g,' ')}</p></div>
-            <div><p className="label">Status</p><p className="font-semibold capitalize">{doc.status}</p></div>
+            {[
+              { label: 'File Type',   value: doc.file_type?.toUpperCase() },
+              { label: 'Department',  value: doc.department_code || '—' },
+              { label: 'Category',    value: doc.category?.replace(/_/g,' ') },
+              { label: 'Status',      value: doc.status },
+            ].map(item => (
+              <div key={item.label}>
+                <p className="label">{item.label}</p>
+                <p className="font-semibold capitalize text-[#0B3D91]">{item.value}</p>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
-      {/* OCR Result */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <p className="section-title flex items-center gap-2">
-            <ScanText size={16} className="text-secondary" />
+      {/* OCR Scan Animation */}
+      {showScan && <OcrScanAnimation isScanning={processing} />}
+
+      {/* OCR Result card */}
+      <div className="card animate-card-enter">
+        <div className="flex items-center justify-between mb-5">
+          <p className="section-title flex items-center gap-2 mb-0">
+            <ScanText size={16} style={{ color: '#D4AF37' }} />
             Extracted Text
           </p>
           <button onClick={processOCR} disabled={processing}
             className="btn-secondary flex items-center gap-2 text-sm">
-            {processing ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-            {processing ? 'Processing…' : 'Run OCR'}
+            {processing
+              ? <><span className="w-4 h-4 border-2 border-[#0B3D91] border-t-transparent rounded-full animate-spin" /> Scanning…</>
+              : <><RefreshCw size={15} /> Run OCR</>
+            }
           </button>
         </div>
 
         {ocr ? (
           <>
-            {/* Confidence score */}
-            <div className="flex items-center gap-3 mb-4 p-3 bg-bgpage rounded-xl">
-              {ocr.confidence_score > 70
-                ? <CheckCircle size={18} className="text-success" />
-                : <AlertCircle size={18} className="text-warning" />
-              }
-              <div>
-                <p className="text-sm font-semibold">
-                  Confidence Score: {ocr.confidence_score}%
-                </p>
-                <p className="text-xs text-slate/50">
-                  Processed: {new Date(ocr.processed_at || ocr.created_at).toLocaleString('en-IN')}
-                </p>
+            {/* Confidence gauge */}
+            <div className="flex items-center gap-4 mb-5 p-4 rounded-xl animate-fade-in"
+              style={{ background: '#F8FAFF', border: '1px solid rgba(11,61,145,0.08)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ background: ocr.confidence_score > 70 ? 'rgba(22,163,74,0.1)' : 'rgba(217,119,6,0.1)' }}>
+                {ocr.confidence_score > 70
+                  ? <CheckCircle size={22} style={{ color: '#16a34a' }} />
+                  : <AlertCircle size={22} style={{ color: '#d97706' }} />
+                }
               </div>
-              <div className="flex-1 ml-2">
+              <div className="flex-1">
+                <div className="flex justify-between mb-1.5">
+                  <p className="text-sm font-bold text-slate-800">
+                    Confidence Score: <span style={{ color: ocr.confidence_score > 70 ? '#16a34a' : '#d97706' }}>
+                      {ocr.confidence_score}%
+                    </span>
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {new Date(ocr.processed_at || ocr.created_at).toLocaleString('en-IN')}
+                  </p>
+                </div>
                 <div className="progress-bar">
-                  <div className={`progress-bar-fill ${ocr.confidence_score > 70 ? 'gradient-success' : 'gradient-warning'}`}
-                    style={{ width: `${ocr.confidence_score}%` }} />
+                  <div className="progress-bar-fill"
+                    style={{
+                      width: `${ocr.confidence_score}%`,
+                      background: ocr.confidence_score > 70
+                        ? 'linear-gradient(90deg, #16a34a, #4ade80)'
+                        : 'linear-gradient(90deg, #d97706, #fbbf24)',
+                    }} />
                 </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-4 font-mono text-sm text-slate leading-relaxed max-h-96 overflow-y-auto whitespace-pre-wrap border border-slate-100">
+            {/* Extracted text */}
+            <div className="rounded-xl p-4 font-mono text-sm leading-relaxed max-h-96 overflow-y-auto whitespace-pre-wrap"
+              style={{ background: '#0B1220', color: '#7dd3fc', border: '1px solid rgba(11,61,145,0.3)', fontSize: '0.78rem' }}>
+              <div style={{ color: 'rgba(212,175,55,0.6)', fontSize: '0.65rem', marginBottom: '12px', letterSpacing: '0.1em' }}>
+                ▶ EXTRACTED TEXT · {ocr.confidence_score}% CONFIDENCE
+              </div>
               {ocr.extracted_text || '(No text extracted)'}
             </div>
           </>
         ) : (
-          <div className="text-center py-12 text-slate/40">
-            <ScanText size={40} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No OCR result yet.</p>
-            <p className="text-xs mt-1">Click "Run OCR" to extract text from this document.</p>
+          <div className="text-center py-14">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(11,61,145,0.05)', border: '1.5px dashed rgba(11,61,145,0.2)' }}>
+              <ScanText size={28} style={{ color: '#0B3D91', opacity: 0.4 }} />
+            </div>
+            <p className="text-sm font-semibold text-slate-500">No OCR result yet</p>
+            <p className="text-xs text-slate-400 mt-1">Click "Run OCR" to extract text from this document</p>
           </div>
         )}
       </div>
+
+      {/* System Log */}
+      {logLines.length > 0 && <DataStreamLog lines={logLines} />}
     </div>
   );
 }

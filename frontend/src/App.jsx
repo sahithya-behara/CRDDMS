@@ -6,6 +6,8 @@ import ProtectedRoute from './routes/ProtectedRoute';
 import MainLayout    from './layouts/MainLayout';
 
 // Pages
+import Home             from './pages/Home';
+import Register         from './pages/Register';
 import Login            from './pages/Login';
 import Dashboard        from './pages/Dashboard';
 import DepartmentVault  from './pages/DepartmentVault';
@@ -24,8 +26,9 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
+      <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/register" element={<Register />} />
 
       {/* Protected — wrapped in sidebar + topbar layout */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>

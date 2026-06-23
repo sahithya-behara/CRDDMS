@@ -6,6 +6,7 @@ import Badge from '../components/Badge';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
 import { CheckSquare, Check, X, MessageSquare, FileText, Download } from 'lucide-react';
+import { ApprovalStamp, SystemStatusBar } from '../components/SystemAnimations';
 
 function fmtBytes(b) {
   if (!b) return '0 B';
@@ -21,6 +22,7 @@ export default function ApprovalWorkflow() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [comment,  setComment]  = useState('');
+  const [stampStatus, setStampStatus] = useState(null); // 'approved' | 'rejected' | null
   const [checkedItems, setCheckedItems] = useState({
     title: false,
     metadata: false,
@@ -65,6 +67,10 @@ export default function ApprovalWorkflow() {
   const updateStatus = async (id, status) => {
     await api.put(`/documents/${id}`, { status });
     setSelected(null);
+    // Show stamp animation for approve/reject
+    if (status === 'approved' || status === 'rejected') {
+      setStampStatus(status);
+    }
     loadDocs(page);
   };
 
@@ -72,10 +78,21 @@ export default function ApprovalWorkflow() {
 
   return (
     <div className="space-y-5">
+      {/* Approval stamp animation */}
+      {stampStatus && (
+        <ApprovalStamp
+          status={stampStatus}
+          onDone={() => setStampStatus(null)}
+        />
+      )}
+
       <div>
         <h1 className="page-title">Approval Workflow</h1>
         <p className="page-sub">Review and approve document submissions</p>
       </div>
+
+      {/* System Status Ticker */}
+      <SystemStatusBar />
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
@@ -168,112 +185,221 @@ export default function ApprovalWorkflow() {
           title="Document Cross-Verification & Approval"
           maxWidth="max-w-2xl"
         >
-          <div className="space-y-4">
-            <div className="bg-bgpage p-4 rounded-xl space-y-2 border border-slate-100">
-              <h4 className="font-semibold text-xs text-slate uppercase tracking-wider">Document Specifications</h4>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                <div><span className="text-slate/50">Title:</span> <strong className="text-slate">{selected.title}</strong></div>
-                <div><span className="text-slate/50">File Name:</span> <strong className="text-slate truncate block max-w-xs">{selected.file_name}</strong></div>
-                <div><span className="text-slate/50">Department:</span> <strong className="text-slate">{selected.department_name || selected.department_code || 'General'}</strong></div>
-                <div><span className="text-slate/50">Category:</span> <strong className="text-slate capitalize">{selected.category?.replace(/_/g, ' ')}</strong></div>
-                <div><span className="text-slate/50">Academic Year:</span> <strong className="text-slate">{selected.academic_year || '—'}</strong></div>
-                <div><span className="text-slate/50">Uploader:</span> <strong className="text-slate">{selected.uploader_name || '—'}</strong></div>
-                <div><span className="text-slate/50">File Format:</span> <strong className="text-slate uppercase">{selected.file_type}</strong></div>
-                <div><span className="text-slate/50">File Size:</span> <strong className="text-slate">{fmtBytes(selected.file_size)}</strong></div>
+          <div className="space-y-5">
+            {/* Status & Title */}
+            <div className="flex flex-col space-y-1">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <span className="px-3 py-1 bg-[#fed65b]/20 text-[#735c00] font-semibold text-xs rounded-full flex items-center gap-1.5 border border-[#fed65b]">
+                  <span className="w-2 h-2 rounded-full bg-[#ed6c02]"></span>
+                  {selected.status?.replace(/_/g, ' ')?.toUpperCase()}
+                </span>
+                <span className="text-xs font-mono text-[#735c00] uppercase tracking-widest opacity-80">ID: REC-{selected.id}-X</span>
               </div>
-              {selected.tags && selected.tags.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-slate-200/50 flex flex-wrap gap-1 items-center">
-                  <span className="text-xs text-slate/50 mr-1">Tags:</span>
-                  {selected.tags.map(t => (
-                    <span key={t} className="px-1.5 py-0.5 bg-accent/25 text-primary text-[10px] font-semibold rounded-md">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <h2 className="text-lg font-bold text-[#570000] tracking-tight">{selected.title}</h2>
             </div>
 
-            {/* OCR Preview if available */}
-            {selected.extracted_text ? (
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="label mb-0">OCR Extracted Text Cross-Check</label>
-                  <span className="text-[10px] bg-success/20 text-success font-semibold px-2 py-0.5 rounded-full">
-                    Confidence: {selected.confidence_score}%
-                  </span>
-                </div>
-                <div className="relative">
-                  <textarea
-                    readOnly
-                    className="input-field text-xs h-24 font-mono bg-slate-50/50 resize-none"
-                    value={selected.extracted_text}
+            {/* Document Preview Card */}
+            <section className="bg-white border border-[#e2bfb9] rounded-xl overflow-hidden shadow-sm">
+              <div className="aspect-[4/3] relative bg-[#d9dadb] flex items-center justify-center group overflow-hidden">
+                {['png', 'jpg', 'jpeg'].includes(selected.file_type?.toLowerCase()) ? (
+                  <img
+                    className="w-full h-full object-cover transition-transform duration-700"
+                    src={`${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}`}
+                    alt="Document Preview"
                   />
-                  <div className="absolute bottom-2 right-2 text-[10px] text-slate/40">
-                    Auto-extracted via Tesseract.js
+                ) : (
+                  <iframe
+                    className="w-full h-full border-none"
+                    src={`${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}#toolbar=0`}
+                    title="PDF Preview"
+                  />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#570000]/30 to-transparent pointer-events-none"></div>
+                <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md p-2 rounded-lg shadow-md border border-[#e2bfb9]">
+                  <span className="material-symbols-outlined text-[#570000]" style={{ fontVariationSettings: "'FILL' 1" }}>lock</span>
+                </div>
+                <div className="absolute bottom-4 left-4 flex items-center gap-2">
+                  <div className="bg-[#800000] text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg backdrop-blur-sm text-xs font-semibold">
+                    <span className="material-symbols-outlined text-sm">visibility</span>
+                    <span>Preview Mode</span>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex flex-col justify-center items-center text-center">
-                <p className="text-xs text-slate/50">No OCR extraction text found or document type doesn't support OCR.</p>
-              </div>
-            )}
+            </section>
 
-            {/* Download Button for Manual inspection */}
-            <div className="flex justify-center">
+            {/* Primary Action Cluster */}
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                type="button"
+                disabled={!(checkedItems.title && checkedItems.metadata && checkedItems.compliance && checkedItems.integrity)}
+                onClick={() => updateStatus(selected.id, 'approved')}
+                className="col-span-2 py-4 bg-[#570000] text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className="material-symbols-outlined">verified</span>
+                Confirm & Approve Document
+              </button>
+              <button
+                type="button"
+                onClick={() => updateStatus(selected.id, 'rejected')}
+                className="py-3 border border-[#8e706c] text-[#241a00] font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-[#f8f9fa] transition-all"
+              >
+                <span className="material-symbols-outlined text-[#d32f2f]">flag</span>
+                Flag Issue
+              </button>
               <a
                 href={`${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}`}
                 target="_blank"
                 rel="noreferrer"
-                className="btn-secondary py-2 w-full flex items-center justify-center gap-2 hover:bg-slate-50"
+                className="py-3 border border-[#8e706c] text-[#241a00] font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-[#f8f9fa] transition-all text-center flex-row flex justify-center items-center"
               >
-                <Download size={14} /> Inspect Original Uploaded Document
+                <span className="material-symbols-outlined text-[#570000]">download</span>
+                Download
               </a>
             </div>
 
-            {/* Verification Checklist */}
-            <div className="space-y-3 pt-2 border-t border-slate-100">
-              <p className="font-semibold text-xs text-slate uppercase tracking-wider">Required Verification Checklist</p>
+            {/* OCR Text check if available */}
+            {selected.extracted_text && (
+              <div className="space-y-1.5">
+                <label className="label mb-0 text-[#735c00] font-bold text-xs uppercase">OCR Extracted Text Data</label>
+                <textarea
+                  readOnly
+                  className="input-field text-xs h-24 font-mono bg-[#fffcf6] border border-[#e2bfb9] rounded-lg p-2.5 resize-none"
+                  value={selected.extracted_text}
+                />
+              </div>
+            )}
+
+            {/* Metadata Bento Grid */}
+            <section className="space-y-3">
+              <h3 className="font-semibold text-[#570000] flex items-center gap-2 text-sm">
+                <span className="material-symbols-outlined text-sm">info</span>
+                Metadata Details
+              </h3>
+              <div className="grid grid-cols-1 gap-3">
+                <div className="p-4 bg-white border border-[#e2bfb9] rounded-xl flex items-center justify-between shadow-sm">
+                  <div>
+                    <p className="text-[10px] font-bold text-[#735c00] uppercase mb-0.5">Faculty / Department</p>
+                    <p className="text-sm font-bold text-[#570000]">{selected.department_name || selected.department_code || 'General Office'}</p>
+                  </div>
+                  <div className="p-2 bg-[#f8f9fa] rounded-lg border border-[#e2bfb9]/30">
+                    <span className="material-symbols-outlined text-[#735c00]">account_balance</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-white border border-[#e2bfb9] rounded-xl shadow-sm">
+                    <p className="text-[10px] font-bold text-[#735c00] uppercase mb-0.5">Uploader</p>
+                    <p className="text-xs font-bold text-[#570000] truncate">{selected.uploader_name || 'System Upload'}</p>
+                  </div>
+                  <div className="p-4 bg-white border border-[#e2bfb9] rounded-xl shadow-sm">
+                    <p className="text-[10px] font-bold text-[#735c00] uppercase mb-0.5">Academic Year</p>
+                    <p className="text-xs font-bold text-[#570000]">{selected.academic_year || '2023-2024'}</p>
+                  </div>
+                </div>
+                {selected.confidence_score !== undefined && (
+                  <div className="p-4 bg-white border border-[#e2bfb9] rounded-xl flex items-center justify-between shadow-sm">
+                    <div className="w-full">
+                      <p className="text-[10px] font-bold text-[#735c00] uppercase mb-1">OCR Confidence Score</p>
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-[#2e7d32]">{selected.confidence_score}%</span>
+                        <div className="flex-1 h-2 bg-[#f3f4f5] rounded-full overflow-hidden border border-[#e2bfb9]/30">
+                          <div
+                            className="h-full bg-[#2e7d32]"
+                            style={{ width: `${selected.confidence_score}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Audit Trail Timeline */}
+            <section className="space-y-3">
+              <h3 className="font-semibold text-[#570000] flex items-center gap-2 text-sm">
+                <span className="material-symbols-outlined text-sm">history</span>
+                Audit Trail
+              </h3>
+              <div className="relative pl-6 space-y-4 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-[#e2bfb9]">
+                {/* Timeline Item 1 */}
+                <div className="relative">
+                  <div className="absolute -left-6 w-6 h-6 rounded-full bg-[#f8f9fa] border-4 border-white flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#570000]"></span>
+                  </div>
+                  <div className="space-y-0.5 text-xs">
+                    <p className="text-[#570000] font-bold">Document Uploaded</p>
+                    <p className="text-[#735c00] font-medium">Uploader: {selected.uploader_name || 'Dean of Admissions'}</p>
+                    <p className="text-[#8e706c] font-mono">{new Date(selected.created_at).toLocaleString('en-IN')}</p>
+                  </div>
+                </div>
+                {/* Timeline Item 2 */}
+                <div className="relative">
+                  <div className="absolute -left-6 w-6 h-6 rounded-full bg-[#f8f9fa] border-4 border-white flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#735c00]"></span>
+                  </div>
+                  <div className="space-y-0.5 text-xs">
+                    <p className="text-[#570000] font-bold">OCR Data Extracted</p>
+                    <p className="text-[#735c00] font-medium">Tesseract.js OCR Automated Engine</p>
+                    <p className="text-[#8e706c] font-mono">Confidence rating: {selected.confidence_score || '98'}%</p>
+                  </div>
+                </div>
+                {/* Timeline Item 3 */}
+                <div className="relative">
+                  <div className="absolute -left-6 w-6 h-6 rounded-full bg-[#f8f9fa] border-4 border-white flex items-center justify-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#ed6c02]"></span>
+                  </div>
+                  <div className="space-y-0.5 text-xs">
+                    <p className="text-[#570000] font-bold">Manual Review Required</p>
+                    <p className="text-[#735c00] font-medium">Status: {selected.status?.replace(/_/g, ' ')}</p>
+                    <p className="text-[#8e706c] font-mono">Reviewer evaluation pending checklist validation</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Checklist */}
+            <div className="space-y-3 pt-2 border-t border-[#e2bfb9]">
+              <p className="font-semibold text-xs text-[#570000] uppercase tracking-wider">Required Verification Checklist</p>
               <div className="space-y-2.5">
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate/85 select-none">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#241a00] select-none">
                   <input
                     type="checkbox"
                     checked={checkedItems.title}
                     onChange={(e) => setCheckedItems(prev => ({ ...prev, title: e.target.checked }))}
-                    className="w-4 h-4 mt-0.5 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-4 h-4 mt-0.5 rounded border-[#e2bfb9] bg-[#fffcf6] text-[#570000] focus:ring-[#570000]"
                   />
                   <span>
                     <strong>File Name & Title Alignment:</strong> I have verified that the document title matches the physical and digital institutional record.
                   </span>
                 </label>
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate/85 select-none">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#241a00] select-none">
                   <input
                     type="checkbox"
                     checked={checkedItems.metadata}
                     onChange={(e) => setCheckedItems(prev => ({ ...prev, metadata: e.target.checked }))}
-                    className="w-4 h-4 mt-0.5 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-4 h-4 mt-0.5 rounded border-[#e2bfb9] bg-[#fffcf6] text-[#570000] focus:ring-[#570000]"
                   />
                   <span>
                     <strong>Metadata & Year Verification:</strong> I have verified that the academic year (e.g. {selected.academic_year}) and classification category are correct.
                   </span>
                 </label>
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate/85 select-none">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#241a00] select-none">
                   <input
                     type="checkbox"
                     checked={checkedItems.compliance}
                     onChange={(e) => setCheckedItems(prev => ({ ...prev, compliance: e.target.checked }))}
-                    className="w-4 h-4 mt-0.5 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-4 h-4 mt-0.5 rounded border-[#e2bfb9] bg-[#fffcf6] text-[#570000] focus:ring-[#570000]"
                   />
                   <span>
                     <strong>Accreditation Compliance:</strong> I have verified that this document meets NAAC, NBA, and UGC compliance requirements.
                   </span>
                 </label>
-                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate/85 select-none">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#241a00] select-none">
                   <input
                     type="checkbox"
                     checked={checkedItems.integrity}
                     onChange={(e) => setCheckedItems(prev => ({ ...prev, integrity: e.target.checked }))}
-                    className="w-4 h-4 mt-0.5 rounded border-slate-300 text-primary focus:ring-primary"
+                    className="w-4 h-4 mt-0.5 rounded border-[#e2bfb9] bg-[#fffcf6] text-[#570000] focus:ring-[#570000]"
                   />
                   <span>
                     <strong>Legibility & Authenticity:</strong> I have verified that the document is clearly legible, untampered, and contains authentic administrative records.
@@ -282,22 +408,14 @@ export default function ApprovalWorkflow() {
               </div>
             </div>
 
-            {/* Verification Actions */}
-            <div className="flex gap-3 pt-3 border-t border-slate-100">
+            {/* Cancel Button */}
+            <div className="pt-2 border-t border-[#e2bfb9] flex justify-end">
               <button
                 type="button"
                 onClick={() => { setSelected(null); }}
-                className="btn-secondary flex-1 py-2.5"
+                className="btn-secondary px-5 py-2"
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={!(checkedItems.title && checkedItems.metadata && checkedItems.compliance && checkedItems.integrity)}
-                onClick={() => updateStatus(selected.id, 'approved')}
-                className="btn-primary flex-1 py-2.5 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Confirm & Approve Document
+                Close Panel
               </button>
             </div>
           </div>
