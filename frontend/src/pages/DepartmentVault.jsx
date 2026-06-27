@@ -106,7 +106,7 @@ export default function DepartmentVault() {
                         </div>
                         <Badge label={doc.status} />
                         <a
-                          href={`${import.meta.env.VITE_API_URL?.replace('/api','')}/${doc.file_path}`}
+                          href={doc.file_path?.startsWith('http') ? doc.file_path : `${import.meta.env.VITE_API_URL?.replace('/api','')}/${doc.file_path}`}
                           target="_blank" rel="noreferrer"
                           className="btn-icon" title="Download"
                         >

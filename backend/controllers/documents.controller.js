@@ -6,6 +6,7 @@ import path from 'path';
 import { logAction } from '../services/audit.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { extractText } from '../services/ocr.service.js';
+import fs from 'fs';
 
 // ── GET /api/documents ──────────────────────────────────
 export async function listDocuments(req, res, next) {
@@ -81,7 +82,8 @@ export async function uploadDocument(req, res, next) {
       throw new AppError('Title, department, and category are required.', 400);
     }
 
-    const filePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, '/');
+    let filePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, '/');
+
     const tagsArr  = tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [];
 
     const { rows } = await pool.query(
@@ -110,9 +112,9 @@ export async function uploadDocument(req, res, next) {
     const ext = path.extname(req.file.originalname).replace('.', '').toLowerCase();
     const imageTypes = ['jpg', 'jpeg', 'png'];
     if (imageTypes.includes(ext)) {
-      const absolutePath = path.resolve(process.cwd(), filePath);
+      const ocrSourcePath = filePath.startsWith('http') ? filePath : path.resolve(process.cwd(), filePath);
       const docId = rows[0].id;
-      extractText(absolutePath, ext)
+      extractText(ocrSourcePath, ext)
         .then(async (ocrResult) => {
           try {
             await pool.query(

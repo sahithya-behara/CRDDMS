@@ -24,7 +24,7 @@ export async function listCompliance(req, res, next) {
     const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
 
     const { rows } = await pool.query(
-      `SELECT ar.*, ud.title, ud.file_name, ud.status, ud.department_id, d.department_name
+      `SELECT ar.*, ud.title, ud.file_name, ud.file_path, ud.file_type, ud.file_size, ud.status, ud.academic_year, ud.department_id, d.department_name
        FROM accreditation_records ar
        JOIN uploaded_documents ud ON ar.document_id = ud.id
        LEFT JOIN departments d    ON ud.department_id = d.id

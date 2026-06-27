@@ -13,7 +13,7 @@ export async function processOCR(req, res, next) {
     const doc    = docRes.rows[0];
     if (!doc) throw new AppError('Document not found.', 404);
 
-    const absPath = path.join(process.cwd(), doc.file_path);
+    const absPath = doc.file_path.startsWith('http') ? doc.file_path : path.resolve(process.cwd(), doc.file_path);
     const { text, confidence } = await extractText(absPath, doc.file_type);
 
     // Upsert OCR result

@@ -5,14 +5,8 @@ import api from '../services/api';
 import Badge from '../components/Badge';
 import Modal from '../components/Modal';
 import Pagination from '../components/Pagination';
-import { CheckSquare, Check, X, MessageSquare, FileText, Download } from 'lucide-react';
+import { Check, X, MessageSquare, FileText } from 'lucide-react';
 import { ApprovalStamp, SystemStatusBar } from '../components/SystemAnimations';
-
-function fmtBytes(b) {
-  if (!b) return '0 B';
-  const mb = b / (1024 * 1024);
-  return mb > 1000 ? `${(mb/1024).toFixed(1)} GB` : `${mb.toFixed(1)} MB`;
-}
 
 export default function ApprovalWorkflow() {
   const [docs,    setDocs]    = useState([]);
@@ -21,7 +15,6 @@ export default function ApprovalWorkflow() {
   const [filter,  setFilter]  = useState('pending');
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
-  const [comment,  setComment]  = useState('');
   const [stampStatus, setStampStatus] = useState(null); // 'approved' | 'rejected' | null
   const [checkedItems, setCheckedItems] = useState({
     title: false,
@@ -30,9 +23,8 @@ export default function ApprovalWorkflow() {
     integrity: false
   });
 
-  useEffect(() => { loadDocs(1); }, [filter]);
-
   const loadDocs = async (p = 1) => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const { data } = await api.get('/documents', { params: { status: filter, page: p, limit: 12 } });
@@ -41,6 +33,9 @@ export default function ApprovalWorkflow() {
       setPage(p);
     } finally { setLoading(false); }
   };
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
+  useEffect(() => { loadDocs(1); }, [filter]);
 
   const handleApproveClick = async (doc) => {
     try {
@@ -53,7 +48,7 @@ export default function ApprovalWorkflow() {
         compliance: false,
         integrity: false
       });
-    } catch (err) {
+    } catch {
       setSelected(doc);
       setCheckedItems({
         title: false,
@@ -204,13 +199,13 @@ export default function ApprovalWorkflow() {
                 {['png', 'jpg', 'jpeg'].includes(selected.file_type?.toLowerCase()) ? (
                   <img
                     className="w-full h-full object-cover transition-transform duration-700"
-                    src={`${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}`}
+                    src={selected.file_path?.startsWith('http') ? selected.file_path : `${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}`}
                     alt="Document Preview"
                   />
                 ) : (
                   <iframe
                     className="w-full h-full border-none"
-                    src={`${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}#toolbar=0`}
+                    src={selected.file_path?.startsWith('http') ? selected.file_path : `${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}#toolbar=0`}
                     title="PDF Preview"
                   />
                 )}
@@ -247,7 +242,7 @@ export default function ApprovalWorkflow() {
                 Flag Issue
               </button>
               <a
-                href={`${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}`}
+                href={selected.file_path?.startsWith('http') ? selected.file_path : `${import.meta.env.VITE_API_URL?.replace('/api','')}/${selected.file_path}`}
                 target="_blank"
                 rel="noreferrer"
                 className="py-3 border border-[#8e706c] text-[#241a00] font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-[#f8f9fa] transition-all text-center flex-row flex justify-center items-center"
