@@ -42,7 +42,8 @@ const allowedOrigins = [
   'http://127.0.0.1:5174',
   'http://127.0.0.1:5175',
   'https://sahithya-behara.github.io',
-  'https://yuva-teja-gaduthuri.github.io'
+  'https://yuva-teja-gaduthuri.github.io',
+  'https://crddms.vercel.app'
 ];
 
 if (process.env.FRONTEND_URL) {
@@ -62,7 +63,9 @@ app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     const isLocalhost = origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:');
-    if (allowedOrigins.includes(origin) || isLocalhost || /^https:\/\/[a-zA-Z0-9-]+\.github\.io$/.test(origin)) {
+    const isGitHubPages = /^https:\/\/[a-zA-Z0-9-]+\.github\.io$/.test(origin);
+    const isVercel = /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
+    if (allowedOrigins.includes(origin) || isLocalhost || isGitHubPages || isVercel) {
       return callback(null, true);
     }
     return callback(new Error('Not allowed by CORS'));
