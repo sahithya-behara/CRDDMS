@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Modal from '../components/Modal';
-import { Archive, Plus, FileText, Calendar } from 'lucide-react';
+import { Archive, Plus, Calendar } from 'lucide-react';
 
 export default function ArchiveCenter() {
   const [archives,  setArchives]  = useState([]);
@@ -11,8 +11,6 @@ export default function ArchiveCenter() {
   const [loading,   setLoading]   = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ document_id:'', archive_reason:'' });
-
-  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -25,6 +23,26 @@ export default function ArchiveCenter() {
       setDocuments(docs.data.documents || []);
     } finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(async () => {
+      setLoading(true);
+      try {
+        const [ar, docs] = await Promise.all([
+          api.get('/archive'),
+          api.get('/documents?status=approved&limit=100'),
+        ]);
+        if (active) {
+          setArchives(ar.data.archives || []);
+          setDocuments(docs.data.documents || []);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, []);
 
   const handleArchive = async (e) => {
     e.preventDefault();

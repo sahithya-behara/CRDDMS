@@ -37,7 +37,7 @@ function CountUp({ end, duration = 1200, suffix = "", decimals = 0 }) {
 
 export default function Home() {
   const [scrollY, setScrollY] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
   
   // Forms states
@@ -57,7 +57,6 @@ export default function Home() {
   });
 
   useEffect(() => {
-    setIsLoaded(true);
     const handleScroll = () => {
       setScrollY(window.scrollY);
     };

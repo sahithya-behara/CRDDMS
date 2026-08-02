@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Modal from '../components/Modal';
-import Badge from '../components/Badge';
-import { Users, Plus, Edit2, Trash2, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, Shield } from 'lucide-react';
 
 const ROLES = ['super_admin','admin','dept_head','faculty','staff','compliance_reviewer'];
 

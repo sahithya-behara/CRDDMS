@@ -1,11 +1,11 @@
 // pages/SearchDocuments.jsx — Full-text + filter search
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import Badge from '../components/Badge';
 import Pagination from '../components/Pagination';
-import { Search, Filter, FileText, Eye, ScanText, X } from 'lucide-react';
+import { Search, FileText, Eye, ScanText, X } from 'lucide-react';
 
 const CATEGORIES = ['student_records','faculty_records','examination_records','administrative_records','accreditation_documents'];
 const STATUSES   = ['pending','under_review','approved','rejected','archived'];
@@ -23,7 +23,7 @@ export default function SearchDocuments() {
 
   useEffect(() => { api.get('/departments').then(r => setDepts(r.data.departments)); }, []);
 
-  const doSearch = useCallback(async (p = 1) => {
+  const doSearch = async (p = 1) => {
     setLoading(true);
     try {
       const params = { q: query, page: p, limit: 12, ...filters };
@@ -33,9 +33,27 @@ export default function SearchDocuments() {
       setPages(data.totalPages || 1);
       setPage(p);
     } finally { setLoading(false); }
-  }, [query, filters]);
+  };
 
-  useEffect(() => { doSearch(1); }, []);
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(async () => {
+      setLoading(true);
+      try {
+        const params = { q: query, page: 1, limit: 12, ...filters };
+        const { data } = await api.get('/search', { params });
+        if (active) {
+          setResults(data.results || []);
+          setTotal(data.total || 0);
+          setPages(data.totalPages || 1);
+          setPage(1);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [query, filters]);
 
   const clearFilters = () => {
     setFilters({ department_id:'', category:'', status:'', academic_year:'' });

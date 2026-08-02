@@ -1,10 +1,9 @@
-// pages/DepartmentVault.jsx — Department-wise document browser
-
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import Badge from '../components/Badge';
 import Pagination from '../components/Pagination';
-import { FolderOpen, FileText, ChevronRight, Download } from 'lucide-react';
+import DocumentViewerModal from '../components/DocumentViewerModal';
+import { FolderOpen, FileText, ChevronRight, Download, Eye } from 'lucide-react';
 
 function fmtBytes(b) {
   if (!b) return '0 B';
@@ -19,6 +18,7 @@ export default function DepartmentVault() {
   const [page,        setPage]     = useState(1);
   const [totalPages,  setTotalPages] = useState(1);
   const [loading,     setLoading]  = useState(false);
+  const [viewDoc,     setViewDoc]  = useState(null);
 
   useEffect(() => {
     api.get('/departments').then(r => setDepts(r.data.departments));
@@ -37,6 +37,12 @@ export default function DepartmentVault() {
   const selectDept = (dept) => {
     setSelected(dept);
     loadDocs(dept.id, 1);
+  };
+
+  const updateStatus = async (id, status, is_authorized) => {
+    await api.put(`/documents/${id}`, { status, is_authorized });
+    setViewDoc(null);
+    if (selected) loadDocs(selected.id, page);
   };
 
   return (
@@ -105,6 +111,12 @@ export default function DepartmentVault() {
                           </p>
                         </div>
                         <Badge label={doc.status} />
+                        <button
+                          onClick={() => setViewDoc(doc)}
+                          className="btn-icon text-primary" title="View & Review File"
+                        >
+                          <Eye size={15} />
+                        </button>
                         <a
                           href={doc.file_path?.startsWith('http') ? doc.file_path : `${import.meta.env.VITE_API_URL?.replace('/api','')}/${doc.file_path}`}
                           target="_blank" rel="noreferrer"
@@ -130,6 +142,15 @@ export default function DepartmentVault() {
           )}
         </div>
       </div>
+
+      {viewDoc && (
+        <DocumentViewerModal
+          doc={viewDoc}
+          isOpen={!!viewDoc}
+          onClose={() => setViewDoc(null)}
+          onUpdateStatus={updateStatus}
+        />
+      )}
     </div>
   );
 }

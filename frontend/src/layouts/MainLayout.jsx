@@ -6,13 +6,10 @@ import { useState, useEffect } from 'react';
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [pageKey, setPageKey] = useState(0);
   const location = useLocation();
 
-  // Trigger re-animation on route change
+  // Scroll to top on navigation
   useEffect(() => {
-    setPageKey(k => k + 1);
-    // Scroll to top on navigation
     document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [location.pathname]);
 
@@ -44,7 +41,7 @@ export default function MainLayout() {
           <div className="absolute inset-0 pointer-events-none deco-grid-bg" style={{ zIndex: 0 }} />
 
           <div className="relative z-10 px-6 py-6 max-w-screen-xl mx-auto"
-            key={pageKey}
+            key={location.pathname}
             style={{ animation: 'fadeInUp 0.4s cubic-bezier(0.16,1,0.3,1) forwards' }}>
             <Outlet />
           </div>

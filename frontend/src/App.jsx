@@ -1,7 +1,7 @@
 // App.jsx — Route definitions
 // All 13 pages mapped to their URLs. Easy to add new pages here.
 
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import ProtectedRoute from './routes/ProtectedRoute';
 import MainLayout    from './layouts/MainLayout';
 

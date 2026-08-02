@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS uploaded_documents (
   uploaded_by    INT           REFERENCES users(id) ON DELETE SET NULL,
   status         VARCHAR(20)   DEFAULT 'pending'
                  CHECK (status IN ('pending','under_review','approved','rejected','archived')),
+  is_authorized  BOOLEAN       DEFAULT TRUE,
   tags           TEXT[]        DEFAULT '{}',
   created_at     TIMESTAMPTZ   DEFAULT NOW(),
   updated_at     TIMESTAMPTZ   DEFAULT NOW()

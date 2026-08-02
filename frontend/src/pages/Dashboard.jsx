@@ -1,15 +1,13 @@
-// pages/Dashboard.jsx — Premium animated dashboard
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import Badge from '../components/Badge';
 import {
   Chart as ChartJS, ArcElement, Tooltip, Legend, Filler,
   CategoryScale, LinearScale, BarElement, PointElement, LineElement
 } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
-import { TrendingUp, Database, CheckCircle, AlertCircle, Clock, ArrowUpRight, Search } from 'lucide-react';
+import { TrendingUp, Database, CheckCircle, Clock, ArrowUpRight, Search } from 'lucide-react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, Filler, CategoryScale, LinearScale, BarElement, PointElement, LineElement);
 
@@ -17,62 +15,6 @@ function fmtBytes(bytes) {
   if (!bytes) return '0 MB';
   const mb = bytes / (1024 * 1024);
   return mb > 1024 ? `${(mb / 1024).toFixed(1)} GB` : `${mb.toFixed(1)} MB`;
-}
-
-// Animated counter hook
-function useCountUp(target, duration = 1200) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    if (!target) return;
-    const num = parseFloat(target);
-    const step = num / (duration / 16);
-    let cur = 0;
-    const timer = setInterval(() => {
-      cur = Math.min(cur + step, num);
-      setCount(cur);
-      if (cur >= num) clearInterval(timer);
-    }, 16);
-    return () => clearInterval(timer);
-  }, [target, duration]);
-  return count;
-}
-
-function PremiumStatCard({ label, value, sub, icon: Icon, colorClass, delay = 0, suffix = '', prefix = '' }) {
-  const animated = useCountUp(parseFloat(value) || 0);
-  const displayVal = Number.isInteger(parseFloat(value))
-    ? Math.round(animated).toLocaleString('en-IN')
-    : animated.toFixed(1);
-
-  return (
-    <div className={`stat-card animate-card-enter ${colorClass}`}
-      style={{ animationDelay: `${delay}s` }}>
-      {/* Top section */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(11,61,145,0.07)' }}>
-          <Icon size={20} className="text-[#0B3D91]" />
-        </div>
-        <div className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
-          style={{ background: 'rgba(22,163,74,0.1)', color: '#16a34a' }}>
-          <ArrowUpRight size={10} />
-          Live
-        </div>
-      </div>
-
-      {/* Value */}
-      <div className="display-number text-3xl font-800" style={{ color: '#0B3D91', letterSpacing: '-0.03em' }}>
-        {prefix}{displayVal}{suffix}
-      </div>
-
-      {/* Label & sub */}
-      <div className="mt-1">
-        <p className="text-xs font-700 uppercase tracking-wider" style={{ color: '#8B6D10', fontSize: '0.68rem' }}>
-          {label}
-        </p>
-        {sub && <p className="text-[11px] text-slate-400 mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  );
 }
 
 export default function Dashboard() {

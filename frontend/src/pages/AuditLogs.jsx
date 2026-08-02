@@ -24,8 +24,6 @@ export default function AuditLogs() {
   const [filter,  setFilter]  = useState('');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { loadLogs(1); }, [filter]);
-
   const loadLogs = async (p = 1) => {
     setLoading(true);
     try {
@@ -36,6 +34,25 @@ export default function AuditLogs() {
       setPage(p);
     } finally { setLoading(false); }
   };
+
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(async () => {
+      setLoading(true);
+      try {
+        const { data } = await api.get('/audit', { params: { action: filter || undefined, page: 1, limit: 20 } });
+        if (active) {
+          setLogs(data.logs || []);
+          setTotal(data.total || 0);
+          setPages(data.totalPages || 1);
+          setPage(1);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [filter]);
 
   const ACTIONS = ['login','logout','upload','view','update','delete','approve','search'];
 
@@ -52,17 +69,14 @@ export default function AuditLogs() {
           className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${!filter ? 'gradient-primary text-white' : 'bg-white border border-slate-200 text-slate'}`}>
           All
         </button>
-        {ACTIONS.map(a => {
-          const info = ACTION_ICONS[a] || {};
-          return (
-            <button key={a} onClick={() => setFilter(a)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all ${
-                filter === a ? 'gradient-primary text-white' : 'bg-white border border-slate-200 text-slate hover:bg-bgpage'
-              }`}>
-              {a}
-            </button>
-          );
-        })}
+        {ACTIONS.map(a => (
+          <button key={a} onClick={() => setFilter(a)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize transition-all ${
+              filter === a ? 'gradient-primary text-white' : 'bg-white border border-slate-200 text-slate hover:bg-bgpage'
+            }`}>
+            {a}
+          </button>
+        ))}
       </div>
 
       <div className="card overflow-hidden p-0">

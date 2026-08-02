@@ -3,7 +3,7 @@
 // All keyframes live in index.css — NO inline <style> tags here.
 
 import { useEffect, useState, useRef } from 'react';
-import { ShieldCheck, Cpu, HardDrive, Wifi, CheckCircle2, AlertTriangle, Lock, Scan } from 'lucide-react';
+import { ShieldCheck, Cpu, CheckCircle2, AlertTriangle, Lock, Scan } from 'lucide-react';
 
 /* ═══════════════════════════════════════════════════
    1. BOOT SPLASH SCREEN
@@ -40,6 +40,7 @@ export function BootSplash({ onComplete }) {
     }, delay + 200));
 
     return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const activeIdx = checks.findIndex(c => !c.done);
@@ -295,6 +296,7 @@ export function ApprovalStamp({ status, onDone }) {
   useEffect(() => {
     const t = setTimeout(() => { setVisible(false); onDone?.(); }, 2200);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!visible) return null;

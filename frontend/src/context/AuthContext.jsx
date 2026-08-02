@@ -29,7 +29,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(async () => {
-    try { await api.post('/auth/logout'); } catch {}
+    try { await api.post('/auth/logout'); } catch (err) { console.debug('Logout endpoint error:', err); }
     localStorage.removeItem('crddms_token');
     localStorage.removeItem('crddms_user');
     setToken(null);

@@ -143,7 +143,7 @@ export async function uploadDocument(req, res, next) {
 // ── PUT /api/documents/:id ──────────────────────────────
 export async function updateDocument(req, res, next) {
   try {
-    const { title, status, category, academic_year, tags } = req.body;
+    const { title, status, category, academic_year, tags, is_authorized } = req.body;
     const { rows } = await pool.query(
       `UPDATE uploaded_documents
        SET title = COALESCE($1, title),
@@ -151,14 +151,15 @@ export async function updateDocument(req, res, next) {
            category = COALESCE($3, category),
            academic_year = COALESCE($4, academic_year),
            tags = COALESCE($5, tags),
+           is_authorized = COALESCE($6, is_authorized),
            updated_at = NOW()
-       WHERE id = $6 RETURNING *`,
-      [title, status, category, academic_year, tags, req.params.id]
+       WHERE id = $7 RETURNING *`,
+      [title, status, category, academic_year, tags, is_authorized !== undefined ? is_authorized : null, req.params.id]
     );
     if (!rows[0]) throw new AppError('Document not found.', 404);
 
     await logAction({ userId: req.user.id, action: 'update', documentId: +req.params.id, ip: req.ip,
-                      details: { new_status: status } });
+                      details: { new_status: status, is_authorized: rows[0].is_authorized } });
 
     res.json({ success: true, document: rows[0] });
   } catch (err) { next(err); }

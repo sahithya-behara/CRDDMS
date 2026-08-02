@@ -1,4 +1,3 @@
-// pages/OCRResults.jsx — OCR viewer with scan animation
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -18,30 +17,32 @@ export default function OCRResults() {
 
   const addLog = (line) => setLogLines(prev => [...prev.slice(-20), line]);
 
-  useEffect(() => { loadData(); }, [id]);
-
-  const loadData = async () => {
-    setLoading(true);
-    addLog(`[INFO]  Loading document #${id} from vault`);
-    try {
-      const [docRes, ocrRes] = await Promise.allSettled([
-        api.get(`/documents/${id}`),
-        api.get(`/ocr/${id}`),
-      ]);
-      if (docRes.status === 'fulfilled') {
-        setDoc(docRes.value.data.document);
-        addLog(`[OK]    Document metadata loaded: ${docRes.value.data.document?.title}`);
+  useEffect(() => {
+    let active = true;
+    Promise.resolve().then(async () => {
+      setLoading(true);
+      addLog(`[INFO]  Loading document #${id} from vault`);
+      try {
+        const [docRes, ocrRes] = await Promise.allSettled([
+          api.get(`/documents/${id}`),
+          api.get(`/ocr/${id}`),
+        ]);
+        if (active && docRes.status === 'fulfilled') {
+          setDoc(docRes.value.data.document);
+          addLog(`[OK]    Document metadata loaded: ${docRes.value.data.document?.title}`);
+        }
+        if (active && ocrRes.status === 'fulfilled') {
+          setOcr(ocrRes.value.data.ocr);
+          addLog('[OK]    OCR result retrieved from cache');
+        } else if (active) {
+          addLog('[INFO]  No OCR result found · Run OCR to process');
+        }
+      } finally {
+        if (active) setLoading(false);
       }
-      if (ocrRes.status === 'fulfilled') {
-        setOcr(ocrRes.value.data.ocr);
-        addLog('[OK]    OCR result retrieved from cache');
-      } else {
-        addLog('[INFO]  No OCR result found · Run OCR to process');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
+    return () => { active = false; };
+  }, [id]);
 
   const processOCR = async () => {
     setProcessing(true);

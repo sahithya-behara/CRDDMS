@@ -1,10 +1,10 @@
 // components/Sidebar.jsx — Premium dark glassmorphism sidebar
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  LayoutDashboard, FolderOpen, Upload, Search, ScanText,
+  LayoutDashboard, FolderOpen, Upload, Search,
   ShieldCheck, CheckSquare, Archive, ScrollText, Users,
-  BarChart3, UserCircle, LogOut, X, GraduationCap, ChevronRight
+  BarChart3, UserCircle, LogOut, X, ChevronRight
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -32,7 +32,6 @@ const GROUP_LABELS = {
 export default function Sidebar({ isOpen, onClose }) {
   const { user, logout } = useAuth();
   const navigate  = useNavigate();
-  const location  = useLocation();
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
