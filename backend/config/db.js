@@ -34,11 +34,14 @@ const pool = new Pool(poolConfig);
 pool.connect((err, client, release) => {
   if (err) {
     console.error('❌  Database connection FAILED:', err.message);
-    console.error('');
-    console.error('👉  Check your .env file. Required variables:');
-    console.error('    DATABASE_URL=postgresql://user:pass@host/db?sslmode=require');
-    console.error('    — OR —');
-    console.error('    DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASSWORD');
+    if (process.env.VERCEL && !process.env.DATABASE_URL) {
+      console.error('⚠️  VERCEL DEPLOYMENT WARNING: DATABASE_URL is missing in Vercel Environment Variables.');
+      console.error('👉  Add DATABASE_URL (e.g. Neon PostgreSQL URL) in your Vercel Project Settings.');
+    } else {
+      console.error('');
+      console.error('👉  Check your .env file or Vercel Environment Variables. Required:');
+      console.error('    DATABASE_URL=postgresql://user:pass@host/db?sslmode=require');
+    }
   } else {
     console.log('✅  PostgreSQL connected successfully');
     release();

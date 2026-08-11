@@ -81,6 +81,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files statically (e.g. for preview)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+if (process.env.VERCEL) {
+  app.use('/uploads', express.static('/tmp/uploads'));
+}
 
 // ── API Routes ─────────────────────────────────────────────
 // Every route group has a clear prefix — easy to find and modify.
@@ -138,8 +141,10 @@ app.get('/api/public/stats', async (req, res, next) => {
 // ── Global Error Handler ───────────────────────────────────
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀  CRDDMS API running at http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀  CRDDMS API running at http://localhost:${PORT}`);
+  });
+}
 
 export default app;

@@ -20,7 +20,8 @@ const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
     const dept = req.body.department_code || 'general';
     const year = req.body.academic_year   || 'misc';
-    const dir  = path.join(process.cwd(), 'uploads', dept.toLowerCase(), year);
+    const baseUploadDir = process.env.VERCEL ? '/tmp/uploads' : path.join(process.cwd(), 'uploads');
+    const dir  = path.join(baseUploadDir, dept.toLowerCase(), year);
     fs.mkdirSync(dir, { recursive: true });
     cb(null, dir);
   },
