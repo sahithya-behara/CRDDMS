@@ -31,3 +31,19 @@ export function authorize(...roles) {
     next();
   };
 }
+
+// Optional authentication middleware for public endpoints that benefit from user context if logged in
+export function optionalAuth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+      req.user = decoded;
+    } catch {
+      // Continue as unauthenticated if token is invalid or expired
+    }
+  }
+  next();
+}
+

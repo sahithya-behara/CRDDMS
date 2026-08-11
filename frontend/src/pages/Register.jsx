@@ -15,15 +15,28 @@ export default function Register() {
   const [role, setRole] = useState('staff');
   const [deptId, setDeptId] = useState('');
   const [departments, setDepartments] = useState([]);
+  const [loadingDepts, setLoadingDepts] = useState(true);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let isMounted = true;
+    setLoadingDepts(true);
     api.get('/departments')
-      .then(r => setDepartments(r.data.departments || []))
-      .catch(() => {});
+      .then(r => {
+        if (isMounted) {
+          setDepartments(r.data.departments || []);
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to fetch departments:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingDepts(false);
+      });
+    return () => { isMounted = false; };
   }, []);
 
   const handleSubmit = async (e) => {
@@ -33,7 +46,7 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await register(name, email, password, role, deptId ? parseInt(deptId) : null);
+      await register(name, email, password, role, deptId ? parseInt(deptId, 10) : null);
       setSuccess(true);
       setTimeout(() => {
         navigate('/login');
@@ -170,8 +183,9 @@ export default function Register() {
                   onChange={(e) => setDeptId(e.target.value)}
                   className="input-field input-with-left-icon cursor-pointer"
                   required
+                  disabled={loadingDepts}
                 >
-                  <option value="">Select Department</option>
+                  <option value="">{loadingDepts ? 'Loading departments...' : 'Select Department'}</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.department_name} ({d.department_code})
@@ -195,6 +209,8 @@ export default function Register() {
                   required
                 >
                   <option value="staff">Department Staff (Upload Only)</option>
+                  <option value="faculty">Faculty Member</option>
+                  <option value="dept_head">Department Head (HOD)</option>
                   <option value="verifier">Document Verifier</option>
                   <option value="compliance_reviewer">Compliance Reviewer</option>
                   <option value="admin">Administrator</option>

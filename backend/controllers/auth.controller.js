@@ -69,15 +69,29 @@ export async function register(req, res, next) {
       throw new AppError('Name, email, and password are required.', 400);
     }
 
+    const parsedDeptId = department_id ? parseInt(department_id, 10) : null;
     const hash = await bcrypt.hash(password, 10);
 
     const { rows } = await pool.query(
       `INSERT INTO users (name, email, password_hash, role, department_id)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role`,
-      [name, email.toLowerCase(), hash, role, department_id || null]
+       VALUES ($1, $2, $3, $4, $5) RETURNING id, name, email, role, department_id`,
+      [name, email.toLowerCase(), hash, role, parsedDeptId]
     );
 
-    res.status(201).json({ success: true, user: rows[0] });
+    const user = rows[0];
+
+    // Fetch department details if department_id was assigned
+    if (user.department_id) {
+      const deptRes = await pool.query('SELECT department_code, department_name FROM departments WHERE id = $1', [user.department_id]);
+      if (deptRes.rows.length > 0) {
+        user.department_code = deptRes.rows[0].department_code;
+        user.department_name = deptRes.rows[0].department_name;
+      }
+    }
+
+    await logAction({ userId: user.id, action: 'user_registered', ip: req.ip, details: { email, role, department_id: user.department_id } });
+
+    res.status(201).json({ success: true, user });
   } catch (err) { next(err); }
 }
 
