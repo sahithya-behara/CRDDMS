@@ -655,9 +655,9 @@ export default function Home() {
 
         {/* Copyright Line */}
         <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-800 text-center text-xs font-semibold text-slate-500 font-sans space-y-2">
-          <p>© Jawaharlal Nehru Technological University Gurajada Vizianagaram. All Rights Reserved.</p>
+          <p>© 2026 Yuva Teja, Sahithya — Department of Information Technology. All Rights Reserved.</p>
           <p className="text-[10px] text-slate-600 font-sans">
-            Designed, Developed and Maintained by Digital Monitoring Cell, JNTU-GV
+            Designed, Developed and Maintained by Yuva Teja &amp; Sahithya | Department of Information Technology, JNTU-GV
           </p>
         </div>
       </footer>
