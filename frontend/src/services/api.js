@@ -3,8 +3,18 @@
 
 import axios from 'axios';
 
+let baseURL = import.meta.env.VITE_API_URL || '/api';
+
+if (typeof window !== 'undefined') {
+  const isLocalhostUrl = baseURL.includes('localhost') || baseURL.includes('127.0.0.1');
+  const isCloudHost = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+  if (isLocalhostUrl || isCloudHost) {
+    baseURL = '/api';
+  }
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL,
   timeout: 30000,
 });
 
