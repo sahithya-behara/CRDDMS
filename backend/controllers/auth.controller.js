@@ -31,7 +31,7 @@ export async function login(req, res, next) {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, department_id: user.department_id },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'crddms_jwt_secret_key_2026',
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 

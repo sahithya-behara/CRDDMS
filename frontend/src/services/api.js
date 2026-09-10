@@ -4,7 +4,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
 });
 
@@ -22,7 +22,9 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('crddms_token');
       localStorage.removeItem('crddms_user');
-      window.location.href = (import.meta.env.BASE_URL || '/') + 'login';
+      const baseUrl = import.meta.env.BASE_URL || '/';
+      const cleanBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+      window.location.href = `${cleanBase}/login`;
     }
     return Promise.reject(err);
   }

@@ -30,7 +30,7 @@ export default function DocumentViewerModal({ doc, isOpen, onClose, onUpdateStat
   const isPdf = fileExt === 'pdf';
   const fileUrl = doc.file_path?.startsWith('http')
     ? doc.file_path
-    : `${import.meta.env.VITE_API_URL?.replace('/api', '')}/${doc.file_path}`;
+    : `${(import.meta.env.VITE_API_URL || '/api').replace('/api', '')}/${doc.file_path}`;
 
   const allChecklistItemsPassed = Object.values(checklist).every(Boolean);
 

@@ -23,7 +23,6 @@ export default function Register() {
 
   useEffect(() => {
     let isMounted = true;
-    setLoadingDepts(true);
     api.get('/departments')
       .then(r => {
         if (isMounted) {

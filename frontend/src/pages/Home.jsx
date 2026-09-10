@@ -65,7 +65,7 @@ export default function Home() {
     // Fetch live system stats from public endpoint
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/public/stats`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/public/stats`);
         const data = await response.json();
         if (data.success) {
           setStats(data);
