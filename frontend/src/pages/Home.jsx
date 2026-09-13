@@ -436,48 +436,81 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Chancellor */}
-            <div className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm flex flex-col items-center text-center space-y-4">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-[#0B3D91]">
-                <span className="material-symbols-outlined text-4xl select-none">account_balance_wallet</span>
+            <div className="group bg-white/95 backdrop-blur-sm border border-slate-100 hover:border-[#0B3D91]/25 p-8 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center text-center space-y-4">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-tr from-[#0B3D91]/20 via-[#D4AF37]/30 to-[#0B3D91]/20 rounded-full blur-xs opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-white ring-2 ring-[#0B3D91]/20 group-hover:ring-[#0B3D91] shadow-md overflow-hidden transition-all duration-300">
+                  <img
+                    src={`${import.meta.env.BASE_URL}leadership/chancellor.jpg`}
+                    alt="Shri Justice(Retd.) S. Abdul Nazeer - Hon'ble Chancellor"
+                    className="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-500 ease-out"
+                    loading="lazy"
+                  />
+                </div>
+                <span className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-[#0B3D91] text-[#D4AF37] flex items-center justify-center shadow-md ring-2 ring-white">
+                  <span className="material-symbols-outlined text-[15px] select-none">account_balance</span>
+                </span>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#0F172A] font-sans">Shri Justice(Retd.) S. Abdul Nazeer</h3>
+                <h3 className="text-lg font-bold text-[#0F172A] font-sans group-hover:text-[#0B3D91] transition-colors">Shri Justice(Retd.) S. Abdul Nazeer</h3>
                 <p className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider mt-0.5">Hon'ble Chancellor</p>
                 <p className="text-xs text-[#64748B] font-semibold mt-1">Governor of Andhra Pradesh</p>
               </div>
-              <div className="w-10 h-0.5 bg-[#D4AF37]/50 rounded" />
+              <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded" />
               <p className="text-xs text-[#475569] font-medium leading-relaxed">
                 Guiding JNTU-GV as Chancellor and the chief executive head of the state administrative systems.
               </p>
             </div>
 
             {/* Vice-Chancellor */}
-            <div className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm flex flex-col items-center text-center space-y-4">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-[#0B3D91]">
-                <span className="material-symbols-outlined text-4xl select-none">person_apron</span>
+            <div className="group bg-white/95 backdrop-blur-sm border border-slate-100 hover:border-[#0B3D91]/25 p-8 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center text-center space-y-4">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-tr from-[#0B3D91]/20 via-[#D4AF37]/30 to-[#0B3D91]/20 rounded-full blur-xs opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-white ring-2 ring-[#0B3D91]/20 group-hover:ring-[#0B3D91] shadow-md overflow-hidden transition-all duration-300">
+                  <img
+                    src={`${import.meta.env.BASE_URL}leadership/vice_chancellor.jpg`}
+                    alt="Prof. V. V. Subba Rao - Hon'ble Vice-Chancellor"
+                    className="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-500 ease-out"
+                    loading="lazy"
+                  />
+                </div>
+                <span className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-[#0B3D91] text-[#D4AF37] flex items-center justify-center shadow-md ring-2 ring-white">
+                  <span className="material-symbols-outlined text-[15px] select-none">school</span>
+                </span>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#0F172A] font-sans">Prof. V. V. Subba Rao</h3>
+                <h3 className="text-lg font-bold text-[#0F172A] font-sans group-hover:text-[#0B3D91] transition-colors">Prof. V. V. Subba Rao</h3>
                 <p className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider mt-0.5">Hon'ble Vice-Chancellor</p>
                 <p className="text-xs text-[#64748B] font-semibold mt-1">Ph.D. Mechanical Eng. (IIT Kharagpur)</p>
               </div>
-              <div className="w-10 h-0.5 bg-[#D4AF37]/50 rounded" />
+              <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded" />
               <p className="text-xs text-[#475569] font-medium leading-relaxed">
                 Directing the administrative and academic focus of JNTU-GV toward technical innovation and excellence.
               </p>
             </div>
 
             {/* Registrar */}
-            <div className="bg-white border border-slate-100 p-8 rounded-2xl shadow-sm flex flex-col items-center text-center space-y-4">
-              <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center text-[#0B3D91]">
-                <span className="material-symbols-outlined text-4xl select-none">feed</span>
+            <div className="group bg-white/95 backdrop-blur-sm border border-slate-100 hover:border-[#0B3D91]/25 p-8 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col items-center text-center space-y-4">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-tr from-[#0B3D91]/20 via-[#D4AF37]/30 to-[#0B3D91]/20 rounded-full blur-xs opacity-75 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-white ring-2 ring-[#0B3D91]/20 group-hover:ring-[#0B3D91] shadow-md overflow-hidden transition-all duration-300">
+                  <img
+                    src={`${import.meta.env.BASE_URL}leadership/registrar.jpg`}
+                    alt="Prof. D. Rajya Lakshmi - Registrar i/c"
+                    className="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-500 ease-out"
+                    loading="lazy"
+                  />
+                </div>
+                <span className="absolute bottom-1 right-1 w-7 h-7 rounded-full bg-[#0B3D91] text-[#D4AF37] flex items-center justify-center shadow-md ring-2 ring-white">
+                  <span className="material-symbols-outlined text-[15px] select-none">history_edu</span>
+                </span>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-[#0F172A] font-sans">Prof. D. Rajya Lakshmi</h3>
+                <h3 className="text-lg font-bold text-[#0F172A] font-sans group-hover:text-[#0B3D91] transition-colors">Prof. D. Rajya Lakshmi</h3>
                 <p className="text-xs font-bold text-[#D4AF37] uppercase tracking-wider mt-0.5">Registrar i/c</p>
                 <p className="text-xs text-[#64748B] font-semibold mt-1">M.Tech, Ph.D.</p>
               </div>
-              <div className="w-10 h-0.5 bg-[#D4AF37]/50 rounded" />
+              <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent rounded" />
               <p className="text-xs text-[#475569] font-medium leading-relaxed">
                 Managing central operations, regulatory frame coordination, and university registries across constituent units.
               </p>
@@ -829,25 +862,51 @@ export default function Home() {
                 <div className="space-y-4">
                   <p className="font-semibold text-slate-800">Governance structure of JNTU-GV:</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-[#0B3D91]/5 p-3.5 rounded-xl border border-[#0B3D91]/10">
-                      <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Chancellor</div>
-                      <div className="font-bold text-sm text-slate-900 mt-1">Shri Justice(Retd.) S. Abdul Nazeer</div>
-                      <div className="text-xs text-slate-500 mt-0.5">Hon'ble Governor of Andhra Pradesh</div>
+                    <div className="bg-[#0B3D91]/5 p-3 rounded-xl border border-[#0B3D91]/10 flex items-center gap-3.5">
+                      <img
+                        src={`${import.meta.env.BASE_URL}leadership/chancellor.jpg`}
+                        alt="Shri Justice(Retd.) S. Abdul Nazeer"
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-[#0B3D91]/20 shadow-xs shrink-0"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Chancellor</div>
+                        <div className="font-bold text-sm text-slate-900 mt-0.5">Shri Justice(Retd.) S. Abdul Nazeer</div>
+                        <div className="text-xs text-slate-500">Hon'ble Governor of Andhra Pradesh</div>
+                      </div>
                     </div>
-                    <div className="bg-[#0B3D91]/5 p-3.5 rounded-xl border border-[#0B3D91]/10">
-                      <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Vice Chancellor</div>
-                      <div className="font-bold text-sm text-slate-900 mt-1">Prof. V. V. Subba Rao</div>
-                      <div className="text-xs text-slate-500 mt-0.5">Mechanical Engineering (IIT Kharagpur)</div>
+                    <div className="bg-[#0B3D91]/5 p-3 rounded-xl border border-[#0B3D91]/10 flex items-center gap-3.5">
+                      <img
+                        src={`${import.meta.env.BASE_URL}leadership/vice_chancellor.jpg`}
+                        alt="Prof. V. V. Subba Rao"
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-[#0B3D91]/20 shadow-xs shrink-0"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Vice Chancellor</div>
+                        <div className="font-bold text-sm text-slate-900 mt-0.5">Prof. V. V. Subba Rao</div>
+                        <div className="text-xs text-slate-500">Mechanical Engineering (IIT Kharagpur)</div>
+                      </div>
                     </div>
-                    <div className="bg-[#0B3D91]/5 p-3.5 rounded-xl border border-[#0B3D91]/10">
-                      <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Registrar i/c</div>
-                      <div className="font-bold text-sm text-slate-900 mt-1">Prof. D. Rajya Lakshmi</div>
-                      <div className="text-xs text-slate-500 mt-0.5">M.Tech, Ph.D</div>
+                    <div className="bg-[#0B3D91]/5 p-3 rounded-xl border border-[#0B3D91]/10 flex items-center gap-3.5">
+                      <img
+                        src={`${import.meta.env.BASE_URL}leadership/registrar.jpg`}
+                        alt="Prof. D. Rajya Lakshmi"
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-[#0B3D91]/20 shadow-xs shrink-0"
+                      />
+                      <div>
+                        <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Registrar i/c</div>
+                        <div className="font-bold text-sm text-slate-900 mt-0.5">Prof. D. Rajya Lakshmi</div>
+                        <div className="text-xs text-slate-500">M.Tech, Ph.D</div>
+                      </div>
                     </div>
-                    <div className="bg-[#0B3D91]/5 p-3.5 rounded-xl border border-[#0B3D91]/10">
-                      <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Administration Officers</div>
-                      <div className="font-bold text-sm text-slate-900 mt-1">OSD & Board Coordinators</div>
-                      <div className="text-xs text-slate-500 mt-0.5">University Chairpersons & Directors</div>
+                    <div className="bg-[#0B3D91]/5 p-3 rounded-xl border border-[#0B3D91]/10 flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-full bg-[#0B3D91]/10 text-[#0B3D91] flex items-center justify-center shrink-0 ring-2 ring-[#0B3D91]/20">
+                        <span className="material-symbols-outlined text-xl">corporate_fare</span>
+                      </div>
+                      <div>
+                        <div className="font-bold text-slate-850 text-[11px] uppercase tracking-wider text-[#0B3D91]">Administration Officers</div>
+                        <div className="font-bold text-sm text-slate-900 mt-0.5">OSD & Board Coordinators</div>
+                        <div className="text-xs text-slate-500">University Chairpersons & Directors</div>
+                      </div>
                     </div>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1.5 text-xs">
