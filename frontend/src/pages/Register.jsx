@@ -6,6 +6,8 @@ import api from '../services/api';
 import { Eye, EyeOff, Lock, Mail, User, BookOpen, Loader2, ShieldCheck, CheckCircle2, ArrowRight } from 'lucide-react';
 import Footer from '../components/Footer';
 
+import { DEFAULT_DEPARTMENTS } from '../constants/departments';
+
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -16,8 +18,8 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [role, setRole] = useState('staff');
   const [deptId, setDeptId] = useState('');
-  const [departments, setDepartments] = useState([]);
-  const [loadingDepts, setLoadingDepts] = useState(true);
+  const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
+  const [loadingDepts, setLoadingDepts] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,11 +33,19 @@ export default function Register() {
     api.get('/departments')
       .then(r => {
         if (isMounted) {
-          setDepartments(r.data.departments || []);
+          const list = r.data.departments;
+          if (Array.isArray(list) && list.length > 0) {
+            setDepartments(list);
+          } else {
+            setDepartments(DEFAULT_DEPARTMENTS);
+          }
         }
       })
       .catch((err) => {
-        console.error('Failed to fetch departments:', err);
+        console.warn('Could not fetch live departments from API, using institutional defaults:', err);
+        if (isMounted) {
+          setDepartments(DEFAULT_DEPARTMENTS);
+        }
       })
       .finally(() => {
         if (isMounted) setLoadingDepts(false);
@@ -298,9 +308,8 @@ export default function Register() {
                         onChange={(e) => setDeptId(e.target.value)}
                         className="input-field input-with-left-icon cursor-pointer"
                         required
-                        disabled={loadingDepts}
                       >
-                        <option value="">{loadingDepts ? 'Loading departments...' : 'Select Department'}</option>
+                        <option value="">Select Department</option>
                         {departments.map((d) => (
                           <option key={d.id} value={d.id}>
                             {d.department_name} ({d.department_code})

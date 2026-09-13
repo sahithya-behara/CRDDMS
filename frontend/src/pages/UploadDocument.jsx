@@ -13,11 +13,13 @@ const CATEGORIES = [
   { value: 'accreditation_documents',  label: 'Accreditation Documents' },
 ];
 
+import { DEFAULT_DEPARTMENTS } from '../constants/departments';
+
 const YEARS = ['2020-21','2021-22','2022-23','2023-24','2024-25','2025-26'];
 
 export default function UploadDocument() {
   const [file,        setFile]        = useState(null);
-  const [departments, setDepartments] = useState([]);
+  const [departments, setDepartments] = useState(DEFAULT_DEPARTMENTS);
   const [form, setForm] = useState({
     title: '', department_id: '', department_code: '', academic_year: '2024-25',
     category: '', tags: '',
@@ -29,7 +31,12 @@ export default function UploadDocument() {
   const [logLines,  setLogLines]  = useState([]);
 
   useEffect(() => {
-    api.get('/departments').then(r => setDepartments(r.data.departments));
+    api.get('/departments')
+      .then(r => {
+        const list = r.data.departments;
+        if (Array.isArray(list) && list.length > 0) setDepartments(list);
+      })
+      .catch(() => setDepartments(DEFAULT_DEPARTMENTS));
   }, []);
 
   const addLog = (line) => setLogLines(prev => [...prev.slice(-20), line]);

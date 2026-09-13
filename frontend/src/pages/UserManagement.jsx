@@ -6,6 +6,8 @@ import api from '../services/api';
 import Modal from '../components/Modal';
 import { Plus, Edit2, Trash2, Shield, CheckCircle2, XCircle, UserCheck, AlertTriangle, Loader2, Clock, Mail } from 'lucide-react';
 
+import { DEFAULT_DEPARTMENTS } from '../constants/departments';
+
 const ROLES = ['super_admin', 'admin', 'dept_head', 'faculty', 'staff', 'compliance_reviewer'];
 
 export default function UserManagement() {
@@ -15,7 +17,7 @@ export default function UserManagement() {
   const [activeTab, setActiveTab] = useState(isSuperAdmin ? 'pending' : 'active');
   const [users, setUsers] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
-  const [depts, setDepts] = useState([]);
+  const [depts, setDepts] = useState(DEFAULT_DEPARTMENTS);
   const [loading, setLoading] = useState(true);
   const [loadingPending, setLoadingPending] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -58,11 +60,17 @@ export default function UserManagement() {
     ])
       .then(([u, d, p]) => {
         setUsers(u.data.users || []);
-        setDepts(d.data.departments || []);
+        const fetchedDepts = d.data.departments;
+        if (Array.isArray(fetchedDepts) && fetchedDepts.length > 0) {
+          setDepts(fetchedDepts);
+        } else {
+          setDepts(DEFAULT_DEPARTMENTS);
+        }
         if (isSuperAdmin) setPendingUsers(p.data.registrations || []);
       })
       .catch((err) => {
         console.error('Error initializing user management:', err);
+        setDepts(DEFAULT_DEPARTMENTS);
       })
       .finally(() => setLoading(false));
   }, [isSuperAdmin]);

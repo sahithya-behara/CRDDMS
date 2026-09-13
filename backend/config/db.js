@@ -6,6 +6,7 @@ import pg from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,39 @@ const __dirname = path.dirname(__filename);
 // Explicitly load .env from backend directory and process cwd
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+// Setup resilient DNS fallback resolver:
+// Local router/campus Wi-Fi DNS servers frequently return RCODE_REFUSED or ENOTFOUND for *.neon.tech domains.
+// We intercept dns.lookup and fall back to public DNS (8.8.8.8 / 1.1.1.1) if the local resolver fails.
+const publicResolver = new dns.promises.Resolver();
+publicResolver.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+
+const origLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+  let opts = options;
+  let cb = callback;
+  if (typeof opts === 'function') {
+    cb = opts;
+    opts = {};
+  }
+  origLookup(hostname, opts, (err, address, family) => {
+    if (err && (err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN' || err.code === 'EREFUSED')) {
+      publicResolver.resolve4(hostname)
+        .then((addresses) => {
+          if (!addresses || addresses.length === 0) {
+            return cb(err);
+          }
+          if (opts && opts.all) {
+            return cb(null, addresses.map((a) => ({ address: a, family: 4 })));
+          }
+          return cb(null, addresses[0], 4);
+        })
+        .catch(() => cb(err));
+      return;
+    }
+    return cb(err, address, family);
+  });
+};
 
 const { Pool } = pg;
 
@@ -44,9 +78,9 @@ const localConfig = process.env.LOCAL_DATABASE_URL
   : {
       host:     process.env.DB_HOST     || 'localhost',
       port:     parseInt(process.env.DB_PORT || '5432', 10),
-      database: process.env.DB_NAME     || 'crddms_db',
-      user:     process.env.DB_USER     || 'crddms_user',
-      password: process.env.DB_PASSWORD || 'crddms_pass',
+      database: process.env.DB_NAME     || 'crddms',
+      user:     process.env.DB_USER     || 'postgres',
+      password: process.env.DB_PASSWORD || 'postgres',
       max: 10,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
@@ -101,8 +135,8 @@ async function testAndReportConnection() {
 
     console.error(`❌  Database connection FAILED (${activeMode} mode):`, err.message);
 
-    // If online mode failed and local config is available, attempt fallback if DB_MODE is auto or online
-    if (activeMode === 'online' && (rawDbMode === 'auto' || !rawDbMode)) {
+    // If online mode failed and local config is available, attempt fallback
+    if (activeMode === 'online' && rawDbMode !== 'strict_online') {
       console.log('🔄  Attempting automatic fallback to Local PostgreSQL (localhost:5432)…');
       try {
         const localPool = new Pool(localConfig);
