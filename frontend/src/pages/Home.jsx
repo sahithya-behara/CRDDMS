@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { Menu, X, Shield, Users, BookOpen, Layers, Award, FileText } from 'lucide-react';
+import Footer from '../components/Footer';
 
 // Simple count up utility to animate statistics cleanly
 function CountUp({ end, duration = 1200, suffix = "", decimals = 0 }) {
@@ -39,6 +41,7 @@ export default function Home() {
   const [scrollY, setScrollY] = useState(0);
   const [isLoaded] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   
   // Forms states
   const [antiraggingForm, setAntiraggingForm] = useState({ name: '', rollNumber: '', department: '', phone: '', details: '' });
@@ -108,55 +111,42 @@ export default function Home() {
         .animate-logo-appearance {
           animation: logoAppearance 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
-        @keyframes marquee {
-          0% { transform: translateX(100%); }
-          100% { transform: translateX(-100%); }
-        }
-        .animate-marquee {
-          display: inline-block;
-          white-space: nowrap;
-          animation: marquee 30s linear infinite;
-        }
-        .animate-marquee:hover {
-          animation-play-state: paused;
-        }
       `}</style>
 
-      {/* Layer 1: College entrance image covering the whole page with parallax */}
+      {/* Layer 1: Official JNTU-GV Crest Background Watermark (Lightly Visible) */}
       <div
-        className="fixed inset-0 bg-cover bg-center grayscale pointer-events-none select-none"
+        className="fixed inset-0 pointer-events-none select-none flex items-center justify-center overflow-hidden z-0"
+        aria-hidden="true"
+      >
+        <img
+          src={`${import.meta.env.BASE_URL}jntugv_logo.jpg`}
+          alt="JNTU-GV Institutional Watermark"
+          className="w-[320px] sm:w-[480px] md:w-[620px] lg:w-[740px] max-w-none object-contain pointer-events-none select-none"
+          style={{
+            opacity: 0.08,
+            filter: 'grayscale(15%) contrast(110%)',
+            transform: `translateY(${-scrollY * 0.05}px) scale(${1 + scrollY * 0.0001})`,
+            transition: 'transform 0.1s ease-out',
+          }}
+        />
+      </div>
+
+      {/* Layer 2: Soft College entrance image texture with subtle parallax */}
+      <div
+        className="fixed inset-0 bg-cover bg-center grayscale pointer-events-none select-none z-0"
         style={{
           backgroundImage: `url("https://jntugv.edu.in/static/media/JNTU_PIC.ae61eebb7dc963f0dd30.png")`,
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center 35%',
-          filter: 'grayscale(60%)', // Watermark visible, grayscale adjusted, no blur
-          transform: `translateY(${-scrollY * 0.12}px) scale(1.05)`, 
-          opacity: isLoaded ? 0.60 : 0, // Opacity set to 60% for optimal visibility
-          transition: 'opacity 1.5s ease-out',
-          zIndex: 0,
+          filter: 'grayscale(70%)',
+          transform: `translateY(${-scrollY * 0.10}px) scale(1.03)`, 
+          opacity: 0.18,
+          transition: 'opacity 1.2s ease-out',
         }}
       />
 
-      {/* Announcements Marquee Ticker */}
-      <div className="bg-[#D4AF37] text-[#0F172A] py-2 px-4 text-xs font-bold z-50 sticky top-0 border-b border-[#0B3D91]/10 overflow-hidden select-none">
-        <div className="max-w-6xl mx-auto flex items-center gap-4">
-          <span className="bg-[#0B3D91] text-white px-2 py-0.5 text-[10px] uppercase rounded tracking-wider flex-shrink-0">
-            📌 Announcements
-          </span>
-          <div className="relative flex-1 overflow-hidden h-5 flex items-center">
-            <div className="animate-marquee hover:cursor-pointer">
-              <span className="mx-8">🔔 CRDDMS System Update: Scheduled database migration successfully completed.</span>
-              <span className="mx-8">🔔 OCR Performance: OCR extraction throughput optimized with upgraded engine configurations.</span>
-              <span className="mx-8">🔔 Administrative Audit: Compliance check verification window now open for all departments.</span>
-              <span className="mx-8">🔔 System Security: Multi-Factor Authentication (MFA) is now enforced for all admin roles.</span>
-              <span className="mx-8">🔔 Maintenance Alert: CRDDMS server maintenance scheduled for Sunday, June 28, 2026, 02:00 AM - 04:00 AM IST.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* SECTION 1 — UNIVERSITY HEADER */}
-      <header className="bg-white/95 backdrop-blur-sm border-b border-[#0B3D91]/10 h-20 px-6 flex justify-between items-center shadow-sm sticky top-9 z-50 animate-logo-appearance">
+      <header className="bg-white/95 backdrop-blur-sm border-b border-[#0B3D91]/10 h-20 px-6 flex justify-between items-center shadow-sm sticky top-0 z-50 animate-logo-appearance">
         <div className="flex items-center gap-3">
           <img
             src={`${import.meta.env.BASE_URL}jntugv_logo.jpg`}
@@ -173,7 +163,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 md:gap-6">
           <nav className="hidden xl:flex items-center gap-5">
             <a href="#home" className="text-xs font-bold text-[#475569] hover:text-[#0B3D91] transition-colors font-sans">Home</a>
             <button onClick={() => setActiveModal('about')} className="text-xs font-bold text-[#475569] hover:text-[#0B3D91] transition-colors font-sans cursor-pointer">About Us</button>
@@ -188,12 +178,113 @@ export default function Home() {
           </nav>
           <Link
             to="/login"
-            className="bg-[#0B3D91] hover:bg-[#1E5AA8] text-white px-5 py-2 text-xs font-bold rounded-lg transition-all duration-200 text-center shadow-sm active:scale-95 font-sans"
+            className="bg-[#0B3D91] hover:bg-[#1E5AA8] text-white px-4 md:px-5 py-2 text-xs font-bold rounded-lg transition-all duration-200 text-center shadow-sm active:scale-95 font-sans whitespace-nowrap"
           >
             Sign In
           </Link>
+
+          {/* Mobile hamburger menu toggle */}
+          <button
+            onClick={() => setMobileNavOpen(!mobileNavOpen)}
+            className="xl:hidden p-2 text-slate-700 hover:text-[#0B3D91] rounded-lg border border-slate-200 bg-slate-50 cursor-pointer"
+            aria-label="Toggle navigation menu"
+          >
+            {mobileNavOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </header>
+
+      {/* Mobile Drawer Overlay */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 xl:hidden">
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setMobileNavOpen(false)}
+          />
+          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-2xl p-6 flex flex-col justify-between z-50 animate-slide-in-right">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <img src={`${import.meta.env.BASE_URL}jntugv_logo.jpg`} alt="JNTU-GV" className="w-8 h-8 object-contain" />
+                  <span className="font-black text-[#0B3D91] text-sm tracking-tight">JNTU-GV Portal</span>
+                </div>
+                <button onClick={() => setMobileNavOpen(false)} className="p-1 rounded-md text-slate-400 hover:text-slate-700">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="py-4 space-y-1 text-sm font-semibold text-slate-700">
+                <a
+                  href="#home"
+                  onClick={() => setMobileNavOpen(false)}
+                  className="block px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#0B3D91]"
+                >
+                  Home
+                </a>
+                <button
+                  onClick={() => { setActiveModal('about'); setMobileNavOpen(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#0B3D91]"
+                >
+                  About University
+                </button>
+                <button
+                  onClick={() => { setActiveModal('administration'); setMobileNavOpen(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#0B3D91]"
+                >
+                  Administration
+                </button>
+                <button
+                  onClick={() => { setActiveModal('cells'); setMobileNavOpen(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#0B3D91]"
+                >
+                  Cells &amp; Committees
+                </button>
+                <button
+                  onClick={() => { setActiveModal('acts'); setMobileNavOpen(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#0B3D91]"
+                >
+                  Acts &amp; Regulations
+                </button>
+                <button
+                  onClick={() => { setActiveModal('facilities'); setMobileNavOpen(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 hover:text-[#0B3D91]"
+                >
+                  Campus Node
+                </button>
+                <button
+                  onClick={() => { setActiveModal('antiragging'); setMobileNavOpen(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm">gavel</span> Anti-Ragging Cell
+                </button>
+                <button
+                  onClick={() => { setActiveModal('alumni'); setMobileNavOpen(false); }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-[#0B3D91] hover:bg-blue-50 font-bold"
+                >
+                  Alumni Connect
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 space-y-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileNavOpen(false)}
+                className="w-full bg-[#0B3D91] hover:bg-[#1E5AA8] text-white font-bold py-2.5 rounded-xl text-center block text-sm shadow-sm"
+              >
+                Sign In to CRDDMS
+              </Link>
+              <Link
+                to="/register"
+                onClick={() => setMobileNavOpen(false)}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-center block text-xs"
+              >
+                Register Staff Access
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SECTION 2 — HERO */}
       <section id="home" className="relative min-h-[85vh] flex items-center justify-center overflow-hidden border-b border-[#0B3D91]/10 px-6 py-20 z-10">
@@ -653,12 +744,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Copyright Line */}
-        <div className="max-w-6xl mx-auto mt-12 pt-8 border-t border-slate-800 text-center text-xs font-semibold text-slate-500 font-sans space-y-2">
-          <p>© 2026 Yuva Teja, Sahithya — Department of Information Technology. All Rights Reserved.</p>
-          <p className="text-[10px] text-slate-600 font-sans">
-            Designed, Developed and Maintained by Yuva Teja &amp; Sahithya | Department of Information Technology, JNTU-GV
-          </p>
+        {/* Mandated Official JNTU-GV Institutional Footer */}
+        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-slate-800">
+          <Footer className="bg-transparent border-0 py-0 px-0 shadow-none" />
         </div>
       </footer>
 

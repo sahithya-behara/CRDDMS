@@ -8,9 +8,15 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import pool from './config/db.js';
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
+
+// Explicitly load .env from backend and process cwd
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+import pool, { connectionStatus } from './config/db.js';
 
 // Route imports (each module handles one resource)
 import authRoutes       from './routes/auth.routes.js';
@@ -23,10 +29,8 @@ import archiveRoutes    from './routes/archive.routes.js';
 import auditRoutes      from './routes/audit.routes.js';
 import userRoutes       from './routes/users.routes.js';
 import reportRoutes     from './routes/reports.routes.js';
+import realtimeRoutes   from './routes/realtime.routes.js';
 import { errorHandler } from './middleware/errorHandler.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
 
 const app  = express();
 const PORT = process.env.PORT || 5000;
@@ -97,6 +101,7 @@ app.use('/api/archive',     archiveRoutes);
 app.use('/api/audit',       auditRoutes);
 app.use('/api/users',       userRoutes);
 app.use('/api/reports',     reportRoutes);
+app.use('/api/realtime',    realtimeRoutes);
 
 // Root path friendly response
 app.get('/', (_req, res) => {
@@ -110,8 +115,40 @@ app.get('/', (_req, res) => {
   });
 });
 
-// Health check
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', time: new Date() }));
+// Health check with database diagnostics
+app.get('/api/health', (_req, res) => {
+  const dbStatus = pool.getStatus ? pool.getStatus() : connectionStatus;
+  res.json({
+    status: 'ok',
+    service: 'CRDDMS Backend API',
+    database: dbStatus,
+    time: new Date()
+  });
+});
+
+// Database connectivity status
+app.get('/api/db-status', async (_req, res) => {
+  try {
+    const startTime = Date.now();
+    const result = await pool.query('SELECT current_database() AS db, version() AS ver, NOW() AS now');
+    const latencyMs = Date.now() - startTime;
+    const currentStatus = pool.getStatus ? pool.getStatus() : connectionStatus;
+    res.json({
+      connected: true,
+      mode: currentStatus.mode || 'online',
+      database: result.rows[0].db,
+      version: result.rows[0].ver,
+      latencyMs,
+      timestamp: result.rows[0].now
+    });
+  } catch (err) {
+    res.status(503).json({
+      connected: false,
+      error: err.message,
+      timestamp: new Date()
+    });
+  }
+});
 
 // Public Stats endpoint (real-time data for homepage screen)
 app.get('/api/public/stats', async (req, res, next) => {

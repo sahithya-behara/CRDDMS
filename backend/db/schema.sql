@@ -13,15 +13,24 @@ CREATE TABLE IF NOT EXISTS departments (
 
 -- Users
 CREATE TABLE IF NOT EXISTS users (
-  id              SERIAL PRIMARY KEY,
-  name            VARCHAR(100)  NOT NULL,
-  email           VARCHAR(150)  NOT NULL UNIQUE,
-  password_hash   TEXT          NOT NULL,
-  role            VARCHAR(30)   NOT NULL DEFAULT 'staff'
-                  CHECK (role IN ('super_admin','admin','dept_head','faculty','staff','compliance_reviewer')),
-  department_id   INT           REFERENCES departments(id) ON DELETE SET NULL,
-  is_active       BOOLEAN       DEFAULT TRUE,
-  created_at      TIMESTAMPTZ   DEFAULT NOW()
+  id                             SERIAL PRIMARY KEY,
+  name                           VARCHAR(100)  NOT NULL,
+  email                          VARCHAR(150)  NOT NULL UNIQUE,
+  password_hash                  TEXT          NOT NULL,
+  role                           VARCHAR(30)   NOT NULL DEFAULT 'staff'
+                                 CHECK (role IN ('super_admin','admin','dept_head','faculty','staff','compliance_reviewer')),
+  department_id                  INT           REFERENCES departments(id) ON DELETE SET NULL,
+  account_status                 VARCHAR(50)   NOT NULL DEFAULT 'PENDING_EMAIL_VERIFICATION'
+                                 CHECK (account_status IN ('PENDING_EMAIL_VERIFICATION','PENDING_SUPER_ADMIN_APPROVAL','ACTIVE','REJECTED','SUSPENDED')),
+  email_verified                 BOOLEAN       NOT NULL DEFAULT FALSE,
+  email_verified_at              TIMESTAMPTZ,
+  email_verification_token_hash  VARCHAR(64),
+  email_verification_expires_at  TIMESTAMPTZ,
+  approved_by                    INT           REFERENCES users(id) ON DELETE SET NULL,
+  approved_at                    TIMESTAMPTZ,
+  rejection_reason               TEXT,
+  is_active                      BOOLEAN       DEFAULT TRUE,
+  created_at                     TIMESTAMPTZ   DEFAULT NOW()
 );
 
 -- Students
@@ -119,3 +128,19 @@ CREATE INDEX IF NOT EXISTS idx_ocr_doc       ON ocr_extracted_text(document_id);
 -- Full-text search index on OCR text
 CREATE INDEX IF NOT EXISTS idx_ocr_text_fts ON ocr_extracted_text
   USING GIN(to_tsvector('english', COALESCE(extracted_text,'')));
+
+-- ── Password Reset Tokens ──────────────────────────────────
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id          SERIAL PRIMARY KEY,
+  user_id     INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash  VARCHAR(64) NOT NULL,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  used        BOOLEAN DEFAULT FALSE,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_reset_token_hash ON password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_reset_user ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_account_status ON users(account_status);
+CREATE INDEX IF NOT EXISTS idx_users_verify_token ON users(email_verification_token_hash);
+

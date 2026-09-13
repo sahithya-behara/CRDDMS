@@ -16,7 +16,7 @@ INSERT INTO departments (department_code, department_name) VALUES
   ('EXAM',  'Examination Branch')
 ON CONFLICT (department_code) DO NOTHING;
 
--- Users  (password = bcrypt of "Password@123")
+-- Users (pre-hashed bcrypt credentials for initial deployment)
 INSERT INTO users (name, email, password_hash, role, department_id) VALUES
   ('Super Administrator', 'superadmin@crddms.edu', '$2b$10$v7WZgXPGKwZNnuj2xtiEVews.Sebgr6J5mELZ1uZ8PqcV06vBVUsS', 'super_admin', NULL),
   ('Dr. Admin User',      'admin@crddms.edu',      '$2b$10$v7WZgXPGKwZNnuj2xtiEVews.Sebgr6J5mELZ1uZ8PqcV06vBVUsS', 'admin',       1),

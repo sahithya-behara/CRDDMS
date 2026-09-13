@@ -9,24 +9,24 @@ import {
 import { useState, useEffect } from 'react';
 
 const NAV_ITEMS = [
-  { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard',         group: 'main' },
-  { to: '/vault',      icon: FolderOpen,       label: 'Department Vault',  group: 'main' },
-  { to: '/upload',     icon: Upload,           label: 'Upload Document',   group: 'main' },
-  { to: '/search',     icon: Search,           label: 'Search Documents',  group: 'main' },
-  { to: '/compliance', icon: ShieldCheck,      label: 'Compliance Center', group: 'workflow' },
-  { to: '/workflow',   icon: CheckSquare,      label: 'Approval Workflow', group: 'workflow' },
-  { to: '/archive',    icon: Archive,          label: 'Archive Center',    group: 'workflow' },
-  { to: '/audit',      icon: ScrollText,       label: 'Audit Logs',        group: 'admin',    roles: ['admin','super_admin','compliance_reviewer'] },
-  { to: '/users',      icon: Users,            label: 'User Management',   group: 'admin',    roles: ['admin','super_admin'] },
+  { to: '/dashboard',  icon: LayoutDashboard, label: 'Dashboard',           group: 'academic' },
+  { to: '/vault',      icon: FolderOpen,       label: 'Department Vault',    group: 'academic' },
+  { to: '/upload',     icon: Upload,           label: 'Upload Record',       group: 'academic' },
+  { to: '/search',     icon: Search,           label: 'Search Records',      group: 'academic' },
+  { to: '/workflow',   icon: CheckSquare,      label: 'Approval Workflow',   group: 'workflow' },
+  { to: '/compliance', icon: ShieldCheck,      label: 'Compliance Center',   group: 'workflow' },
+  { to: '/archive',    icon: Archive,          label: 'Archive Center',      group: 'workflow' },
+  { to: '/users',      icon: Users,            label: 'User Directory',      group: 'admin',    roles: ['admin','super_admin'] },
+  { to: '/audit',      icon: ScrollText,       label: 'Audit Logs',          group: 'admin',    roles: ['admin','super_admin','compliance_reviewer'] },
   { to: '/reports',    icon: BarChart3,        label: 'Reports & Analytics', group: 'admin' },
-  { to: '/profile',    icon: UserCircle,       label: 'Profile Settings',  group: 'account' },
+  { to: '/profile',    icon: UserCircle,       label: 'Profile Settings',    group: 'account' },
 ];
 
 const GROUP_LABELS = {
-  main:     'NAVIGATION',
-  workflow: 'WORKFLOW',
-  admin:    'ADMINISTRATION',
-  account:  'ACCOUNT',
+  academic: 'ACADEMIC & RECORDS',
+  workflow: 'INSTITUTIONAL WORKFLOW',
+  admin:    'GOVERNANCE & AUDIT',
+  account:  'MY ACCOUNT',
 };
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -54,7 +54,7 @@ export default function Sidebar({ isOpen, onClose }) {
     acc[item.group].push(item);
     return acc;
   }, {});
-  const groupOrder = ['main', 'workflow', 'admin', 'account'];
+  const groupOrder = ['academic', 'workflow', 'admin', 'account'];
 
   const initials = user?.name
     ? user.name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase()

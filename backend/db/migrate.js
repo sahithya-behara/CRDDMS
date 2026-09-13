@@ -6,20 +6,28 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Explicitly load .env from backend directory and process cwd
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
 const { Pool } = pg;
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Build connection config ──────────────────────────────
-const poolConfig = process.env.DATABASE_URL
+const rawDbMode = (process.env.DB_MODE || '').toLowerCase().trim();
+const useOnline = rawDbMode !== 'local' && Boolean(process.env.DATABASE_URL);
+
+const poolConfig = useOnline
   ? {
       connectionString: process.env.DATABASE_URL,
       ssl: { rejectUnauthorized: false },
     }
   : {
       host:     process.env.DB_HOST     || 'localhost',
-      port:     parseInt(process.env.DB_PORT || '5432'),
+      port:     parseInt(process.env.DB_PORT || '5432', 10),
       database: process.env.DB_NAME     || 'crddms_db',
       user:     process.env.DB_USER     || 'crddms_user',
       password: process.env.DB_PASSWORD || 'crddms_pass',

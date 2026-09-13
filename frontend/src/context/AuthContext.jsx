@@ -23,8 +23,8 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
-  const register = useCallback(async (name, email, password, role, department_id) => {
-    const { data } = await api.post('/auth/register', { name, email, password, role, department_id });
+  const register = useCallback(async (name, email, password, confirmPassword, role, department_id) => {
+    const { data } = await api.post('/auth/register', { name, email, password, confirmPassword, role, department_id });
     return data;
   }, []);
 

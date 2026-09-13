@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime, useRealtimeSubscription } from '../context/RealtimeContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
@@ -7,7 +8,7 @@ import {
   CategoryScale, LinearScale, BarElement, PointElement, LineElement
 } from 'chart.js';
 import { Doughnut, Bar, Line } from 'react-chartjs-2';
-import { TrendingUp, Database, CheckCircle, Clock, ArrowUpRight, Search } from 'lucide-react';
+import { TrendingUp, Database, CheckCircle, Clock, ArrowUpRight, Search, Radio } from 'lucide-react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, Filler, CategoryScale, LinearScale, BarElement, PointElement, LineElement);
 
@@ -19,23 +20,55 @@ function fmtBytes(bytes) {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { isLive } = useRealtime();
   const navigate = useNavigate();
   const [stats,   setStats]   = useState(null);
   const [reports, setReports] = useState(null);
   const [docs,    setDocs]    = useState([]);
+  const [pendingRegCount, setPendingRegCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/reports/dashboard'),
-      api.get('/reports'),
-      api.get('/documents?limit=6'),
-    ]).then(([s, r, d]) => {
+  const fetchDashboardData = useCallback(async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
+    try {
+      const [s, r, d] = await Promise.all([
+        api.get('/reports/dashboard'),
+        api.get('/reports'),
+        api.get('/documents?limit=6'),
+      ]);
       setStats(s.data);
       setReports(r.data);
       setDocs(d.data.documents || []);
-    }).finally(() => setLoading(false));
-  }, []);
+
+      if (user?.role === 'super_admin') {
+        const p = await api.get('/users/pending-registrations');
+        setPendingRegCount(p.data?.count || 0);
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+    } finally {
+      if (!isBackground) setLoading(false);
+    }
+  }, [user?.role]);
+
+  useEffect(() => {
+    fetchDashboardData(false);
+  }, [fetchDashboardData]);
+
+  // Real-Time auto-refresh on database changes and new user registrations
+  useRealtimeSubscription(
+    [
+      'DOCUMENT_CREATED',
+      'DOCUMENT_STATUS_CHANGED',
+      'DOCUMENT_DELETED',
+      'COMPLIANCE_UPDATED',
+      'REGISTRATION_PENDING_APPROVAL',
+      'REGISTRATION_STATUS_CHANGED',
+    ],
+    useCallback(() => {
+      fetchDashboardData(true);
+    }, [fetchDashboardData])
+  );
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -182,19 +215,51 @@ export default function Dashboard() {
               {new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
             </p>
           </div>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2 flex-wrap items-center">
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-              style={{ background: 'rgba(22,163,74,0.2)', color: '#6ee7b7', border: '1px solid rgba(22,163,74,0.3)' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 status-dot-active" />
-              System Online
+              style={{
+                background: isLive ? 'rgba(22,163,74,0.2)' : 'rgba(217,119,6,0.2)',
+                color: isLive ? '#6ee7b7' : '#fde68a',
+                border: isLive ? '1px solid rgba(22,163,74,0.3)' : '1px solid rgba(217,119,6,0.3)',
+              }}>
+              <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-green-400 status-dot-active' : 'bg-amber-400'}`} />
+              {isLive ? 'Live Sync Active' : 'Connecting Sync…'}
             </span>
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
               style={{ background: 'rgba(212,175,55,0.15)', color: '#D4AF37', border: '1px solid rgba(212,175,55,0.3)' }}>
-              🔒 Secure SSL
+              🔒 Institutional SSL
             </span>
           </div>
         </div>
       </div>
+
+      {/* ── SUPER ADMIN PENDING REGISTRATIONS ALERT BANNER ── */}
+      {user?.role === 'super_admin' && pendingRegCount > 0 && (
+        <div className="bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-400/50 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm animate-card-enter">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black shadow-md flex-shrink-0 animate-pulse text-lg">
+              !
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                Pending User Registrations Awaiting Approval
+                <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-white">
+                  {pendingRegCount}
+                </span>
+              </h3>
+              <p className="text-xs text-slate-600 mt-0.5">
+                Institutional applicants have verified their email ownership and are waiting for Super Admin authorization.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/users')}
+            className="px-4 py-2.5 bg-[#0B3D91] hover:bg-[#082d6b] text-white text-xs font-bold rounded-xl shadow-sm transition-all whitespace-nowrap self-start sm:self-auto cursor-pointer"
+          >
+            Review &amp; Approve Registrations →
+          </button>
+        </div>
+      )}
 
       {/* ── SEARCH BAR ── */}
       <section className="animate-card-enter" style={{ animationDelay: '0.06s' }}>

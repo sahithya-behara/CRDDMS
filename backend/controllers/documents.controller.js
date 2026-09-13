@@ -6,6 +6,7 @@ import path from 'path';
 import { logAction } from '../services/audit.service.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { extractText } from '../services/ocr.service.js';
+import { realtimeService } from '../services/realtime.service.js';
 import fs from 'fs';
 
 // ── GET /api/documents ──────────────────────────────────
@@ -136,6 +137,18 @@ export async function uploadDocument(req, res, next) {
         });
     }
 
+    // Broadcast Real-Time Document Creation to authorized users
+    realtimeService.broadcastEvent('DOCUMENT_CREATED', {
+      id: rows[0].id,
+      title: rows[0].title,
+      file_name: rows[0].file_name,
+      category: rows[0].category,
+      status: rows[0].status,
+      department_id: rows[0].department_id,
+      uploader_name: req.user.name,
+      message: `New document uploaded: "${rows[0].title}"`,
+    });
+
     res.status(201).json({ success: true, document: rows[0] });
   } catch (err) { next(err); }
 }
@@ -161,6 +174,18 @@ export async function updateDocument(req, res, next) {
     await logAction({ userId: req.user.id, action: 'update', documentId: +req.params.id, ip: req.ip,
                       details: { new_status: status, is_authorized: rows[0].is_authorized } });
 
+    // Broadcast Real-Time Document Status Update
+    realtimeService.broadcastEvent('DOCUMENT_STATUS_CHANGED', {
+      id: rows[0].id,
+      title: rows[0].title,
+      status: rows[0].status,
+      category: rows[0].category,
+      department_id: rows[0].department_id,
+      is_authorized: rows[0].is_authorized,
+      updated_by: req.user.name,
+      message: `Document "${rows[0].title}" status updated to ${rows[0].status?.toUpperCase()}`,
+    });
+
     res.json({ success: true, document: rows[0] });
   } catch (err) { next(err); }
 }
@@ -168,10 +193,19 @@ export async function updateDocument(req, res, next) {
 // ── DELETE /api/documents/:id ───────────────────────────
 export async function deleteDocument(req, res, next) {
   try {
-    const { rows } = await pool.query('DELETE FROM uploaded_documents WHERE id=$1 RETURNING id', [req.params.id]);
+    const { rows } = await pool.query('DELETE FROM uploaded_documents WHERE id=$1 RETURNING id, department_id, title', [req.params.id]);
     if (!rows[0]) throw new AppError('Document not found.', 404);
 
     await logAction({ userId: req.user.id, action: 'delete', documentId: +req.params.id, ip: req.ip });
+
+    // Broadcast Real-Time Document Deletion
+    realtimeService.broadcastEvent('DOCUMENT_DELETED', {
+      id: rows[0].id,
+      department_id: rows[0].department_id,
+      deleted_by: req.user.name,
+      message: `Document REC-${rows[0].id} was deleted.`,
+    });
+
     res.json({ success: true, message: 'Document deleted.' });
   } catch (err) { next(err); }
 }

@@ -1,14 +1,19 @@
 // services/api.js — Central Axios instance
-// All API calls go through this file. To change the base URL, update .env only.
+// Seamlessly connects to local backend (http://localhost:5000) or cloud deployment.
 
 import axios from 'axios';
 
-let baseURL = import.meta.env.VITE_API_URL || '/api';
+// Resolve API base URL:
+// 1. If explicitly configured via VITE_API_URL, use it (custom cloud API or custom port)
+// 2. In browser on localhost / 127.0.0.1: use 'http://localhost:5000/api' or proxied '/api'
+// 3. On cloud hosting (Vercel / domain): default to '/api'
+let baseURL = import.meta.env.VITE_API_URL;
 
-if (typeof window !== 'undefined') {
-  const isLocalhostUrl = baseURL.includes('localhost') || baseURL.includes('127.0.0.1');
-  const isCloudHost = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
-  if (isLocalhostUrl || isCloudHost) {
+if (!baseURL) {
+  if (typeof window !== 'undefined') {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    baseURL = isLocalhost ? 'http://localhost:5000/api' : '/api';
+  } else {
     baseURL = '/api';
   }
 }

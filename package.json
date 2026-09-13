@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "server": "node backend/server.js",
+    "server:dev": "node --watch backend/server.js",
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "migrate": "node backend/db/migrate.js",
     "build": "cd frontend && npm install --include=dev && npm run build"
   },
   "dependencies": {

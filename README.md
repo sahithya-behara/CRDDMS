@@ -48,16 +48,18 @@ Frontend runs at: **http://localhost:5173**
 
 ---
 
-## 🔐 Default Login Credentials
+## 🔐 Account Roles & Access Provisioning
 
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | superadmin@crddms.edu | Password@123 |
-| Admin | admin@crddms.edu | Password@123 |
-| Dept Head | ravi@crddms.edu | Password@123 |
-| Faculty | priya@crddms.edu | Password@123 |
-| Staff | suresh@crddms.edu | Password@123 |
-| Compliance Reviewer | naac@crddms.edu | Password@123 |
+Initial institutional accounts are seeded into the database for role-based governance. Passwords must be set securely via the database migration or retrieved/reset using the integrated institutional **Forgot Password** recovery workflow.
+
+| Role | Default Email Identifier | Access Tier |
+|------|--------------------------|-------------|
+| Super Admin | `superadmin@crddms.edu` | Full System Governance |
+| Admin | `admin@crddms.edu` | Institutional Administration |
+| Dept Head | `ravi@crddms.edu` | Department Management |
+| Faculty | `priya@crddms.edu` | Academic Record Submissions |
+| Staff | `suresh@crddms.edu` | Operational Document Entry |
+| Compliance Reviewer | `naac@crddms.edu` | NAAC/NBA Regulatory Oversight |
 
 ---
 
@@ -149,22 +151,107 @@ clgproject/
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙️ Environment Variables & Database Connectivity
 
-**backend/.env**
-```
+CRDDMS supports **Dual-Mode Database Architecture**: seamless operation with either the **Online Cloud Database (Neon PostgreSQL)** or a **Local PostgreSQL** instance, with automated diagnostics and graceful fallback.
+
+### 🌐 Option A: Online Cloud Database (Neon PostgreSQL) — Default & Ready
+
+The system comes pre-configured to connect to the institutional Neon Cloud PostgreSQL database with SSL encryption. No local database installation is needed.
+
+**backend/.env** (and root `.env`):
+```env
 PORT=5000
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=crddms_db
-DB_USER=crddms_user
-DB_PASSWORD=crddms_pass
-JWT_SECRET=<change-in-production>
+NODE_ENV=development
+
+# Database Mode: 'online' | 'local' | 'auto'
+DB_MODE=online
+
+# Online Neon Cloud PostgreSQL Connection String
+DATABASE_URL=postgresql://neondb_owner:npg_TIPGfuD4JKc0@ep-wispy-bar-aepcgkbs-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
+
+# JWT Configuration
+JWT_SECRET=crddms_jwt_secret_key_2026
 JWT_EXPIRES_IN=24h
+
+# File Upload Storage
+UPLOAD_DIR=./uploads
+MAX_FILE_SIZE=26214400
+
+# CORS Allowed Origin
 FRONTEND_URL=http://localhost:5173
 ```
 
-**frontend/.env**
+---
+
+### 💻 Option B: Local PostgreSQL Database (Docker or Native)
+
+For local offline development without internet access:
+
+1. Start your local PostgreSQL server or Docker container:
+   ```bash
+   docker-compose up -d
+   ```
+2. Update `backend/.env` (or set `DB_MODE=local`):
+   ```env
+   DB_MODE=local
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_NAME=crddms_db
+   DB_USER=crddms_user
+   DB_PASSWORD=crddms_pass
+   ```
+3. Run the migration to initialize local tables and seed data:
+   ```bash
+   npm run migrate
+   ```
+
+---
+
+### 🚀 Running the Platform Locally
+
+From the root repository directory:
+
+```bash
+# Terminal 1: Start Backend Server (runs on http://localhost:5000)
+npm run server
+
+# Terminal 2: Start Frontend Dev Server (runs on http://localhost:5173)
+npm run dev:frontend
 ```
-VITE_API_URL=http://localhost:5000/api
+
+> [!NOTE]
+> The Vite development server automatically proxies all `/api` and `/uploads` requests from port `5173` to backend port `5000`. You can also verify system health and database connectivity at any time via:
+> - `http://localhost:5000/api/health`
+> - `http://localhost:5000/api/db-status`
+
+---
+
+## 📧 Real-Time Email Delivery & Sample SMTP Credentials
+
+The JNTU-GV CRDDMS portal supports live, real-time SMTP email delivery for:
+1. **Institutional Registration Email Verification** (24-hour cryptographic single-use token).
+2. **Account Security Password Recovery & Reset Links** (15-minute cryptographic single-use token).
+3. **Super Admin Approval & Rejection Notifications**.
+
+### Sample SMTP Credentials Configured (Ethereal Email)
+
+The application is pre-configured with active sample SMTP credentials for real-time delivery testing:
+
+```env
+SMTP_HOST=smtp.ethereal.email
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=csnyxw7sbxi256io@ethereal.email
+SMTP_PASS=tSQ5ShxhNfx537W2N1
+EMAIL_FROM="JNTU-GV CRDDMS Portal" <support.crddms@jntugv.edu.in>
 ```
+
+### How to View Real-Time Emails:
+- **Instant Browser Link**: When submitting a registration or password reset request, the UI provides a one-click button:
+  `🔗 Open Real-Time Email in Browser (Live Test Inbox) ↗`
+  Clicking it opens the exact HTML email delivered to the SMTP inbox in a new tab, complete with official JNTU-GV institutional header, formatted message, and working verification/reset buttons.
+- **Terminal Console**: The backend console logs clickable Ethereal preview URLs whenever an email is dispatched:
+  `📨 [Live Email Preview URL]: https://ethereal.email/message/...`
+
+

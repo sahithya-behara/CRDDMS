@@ -1,5 +1,6 @@
-import { Menu, Bell, Search, ChevronDown, Check, X, CheckSquare } from 'lucide-react';
+import { Menu, Bell, Search, ChevronDown, Check, X, CheckSquare, Radio } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useRealtime } from '../context/RealtimeContext';
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -19,50 +20,20 @@ const PAGE_TITLES = {
 
 export default function TopBar({ onMenuClick }) {
   const { user } = useAuth();
+  const {
+    isLive,
+    notifications,
+    unreadCount,
+    markAllAsRead,
+    clearNotifications,
+  } = useRealtime();
+
   const navigate = useNavigate();
   const location = useLocation();
-  const [showNotif, setShowNotif]   = useState(false);
-  const [showUser,  setShowUser]    = useState(false);
+  const [showNotif, setShowNotif] = useState(false);
+  const [showUser, setShowUser]   = useState(false);
   const notifRef = useRef(null);
   const userRef  = useRef(null);
-
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('crddms_notifications');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (err) {
-        console.error('Failed to parse notifications:', err);
-      }
-    }
-    return [
-      { id: 1, icon: '📋', text: '3 documents pending approval', time: '2m ago', color: '#d97706', read: false },
-      { id: 2, icon: '✅', text: 'OCR processing completed for 2 files', time: '15m ago', color: '#16a34a', read: false },
-      { id: 3, icon: '🔔', text: 'Compliance review due tomorrow', time: '1h ago', color: '#0B3D91', read: false },
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('crddms_notifications', JSON.stringify(notifications));
-  }, [notifications]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const clearNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const clearAllNotifications = () => {
-    setNotifications([]);
-  };
 
   const pageInfo = PAGE_TITLES[location.pathname] || { title: 'CRDDMS', sub: 'JNTU-GV Document Portal' };
 
@@ -116,12 +87,25 @@ export default function TopBar({ onMenuClick }) {
       <div className="flex-1" />
 
       {/* ── RIGHT SIDE ACTIONS ── */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
+        {/* Live sync indicator badge */}
+        <div
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors select-none"
+          style={{
+            background: isLive ? 'rgba(22, 163, 74, 0.08)' : 'rgba(100, 116, 139, 0.08)',
+            color: isLive ? '#16a34a' : '#64748b',
+            borderColor: isLive ? 'rgba(22, 163, 74, 0.25)' : 'rgba(100, 116, 139, 0.2)',
+          }}
+          title={isLive ? 'Real-time live updates connected via SSE' : 'Connecting to real-time event stream'}
+        >
+          <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+          <span>{isLive ? 'LIVE' : 'CONNECTING'}</span>
+        </div>
 
         {/* Quick search pill */}
         <button
           onClick={() => navigate('/search')}
-          className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all duration-200 hover:bg-blue-50 hover:text-[#0B3D91] border border-transparent hover:border-blue-100"
+          className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 transition-all duration-200 hover:bg-blue-50 hover:text-[#0B3D91] border border-transparent hover:border-blue-100"
         >
           <Search size={13} />
           <span>Quick search...</span>

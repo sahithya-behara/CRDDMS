@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '../services/api';
 import Badge from '../components/Badge';
 import Pagination from '../components/Pagination';
 import DocumentViewerModal from '../components/DocumentViewerModal';
 import { Check, X, MessageSquare, FileText, Eye } from 'lucide-react';
 import { ApprovalStamp, SystemStatusBar } from '../components/SystemAnimations';
+import { useRealtimeSubscription } from '../context/RealtimeContext';
 
 export default function ApprovalWorkflow() {
   const [docs,    setDocs]    = useState([]);
@@ -15,7 +16,7 @@ export default function ApprovalWorkflow() {
   const [selected, setSelected] = useState(null);
   const [stampStatus, setStampStatus] = useState(null); // 'approved' | 'rejected' | null
 
-  const loadDocs = async (p = 1) => {
+  const loadDocs = useCallback(async (p = 1) => {
     setLoading(true);
     try {
       const { data } = await api.get('/documents', { params: { status: filter, page: p, limit: 12 } });
@@ -23,7 +24,15 @@ export default function ApprovalWorkflow() {
       setPages(data.totalPages || 1);
       setPage(p);
     } finally { setLoading(false); }
-  };
+  }, [filter]);
+
+  // Real-time live synchronization: refresh list automatically when status changes or docs are uploaded
+  useRealtimeSubscription(
+    ['DOCUMENT_CREATED', 'DOCUMENT_STATUS_CHANGED', 'DOCUMENT_DELETED'],
+    useCallback(() => {
+      loadDocs(page);
+    }, [loadDocs, page])
+  );
 
   useEffect(() => {
     let active = true;

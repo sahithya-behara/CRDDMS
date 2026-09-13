@@ -9,6 +9,9 @@ import MainLayout    from './layouts/MainLayout';
 import Home             from './pages/Home';
 import Register         from './pages/Register';
 import Login            from './pages/Login';
+import ForgotPassword   from './pages/ForgotPassword';
+import ResetPassword    from './pages/ResetPassword';
+import VerifyEmail      from './pages/VerifyEmail';
 import Dashboard        from './pages/Dashboard';
 import DepartmentVault  from './pages/DepartmentVault';
 import UploadDocument   from './pages/UploadDocument';
@@ -26,9 +29,12 @@ export default function App() {
   return (
     <Routes>
       {/* Public */}
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/"                element={<Home />} />
+      <Route path="/login"           element={<Login />} />
+      <Route path="/register"        element={<Register />} />
+      <Route path="/verify-email"    element={<VerifyEmail />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password"  element={<ResetPassword />} />
 
       {/* Protected — wrapped in sidebar + topbar layout */}
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
