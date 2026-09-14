@@ -90,18 +90,18 @@ if (process.env.VERCEL) {
 }
 
 // ── API Routes ─────────────────────────────────────────────
-// Every route group has a clear prefix — easy to find and modify.
-app.use('/api/auth',        authRoutes);
-app.use('/api/departments', departmentRoutes);
-app.use('/api/documents',   documentRoutes);
-app.use('/api/ocr',         ocrRoutes);
-app.use('/api/search',      searchRoutes);
-app.use('/api/compliance',  complianceRoutes);
-app.use('/api/archive',     archiveRoutes);
-app.use('/api/audit',       auditRoutes);
-app.use('/api/users',       userRoutes);
-app.use('/api/reports',     reportRoutes);
-app.use('/api/realtime',    realtimeRoutes);
+// Supports both with and without /api prefix for seamless serverless routing:
+app.use(['/api/auth', '/auth'],               authRoutes);
+app.use(['/api/departments', '/departments'], departmentRoutes);
+app.use(['/api/documents', '/documents'],     documentRoutes);
+app.use(['/api/ocr', '/ocr'],                 ocrRoutes);
+app.use(['/api/search', '/search'],           searchRoutes);
+app.use(['/api/compliance', '/compliance'],   complianceRoutes);
+app.use(['/api/archive', '/archive'],         archiveRoutes);
+app.use(['/api/audit', '/audit'],             auditRoutes);
+app.use(['/api/users', '/users'],             userRoutes);
+app.use(['/api/reports', '/reports'],         reportRoutes);
+app.use(['/api/realtime', '/realtime'],       realtimeRoutes);
 
 // Root path friendly response
 app.get('/', (_req, res) => {
@@ -116,7 +116,7 @@ app.get('/', (_req, res) => {
 });
 
 // Health check with database diagnostics
-app.get('/api/health', (_req, res) => {
+app.get(['/api/health', '/health'], (_req, res) => {
   const dbStatus = pool.getStatus ? pool.getStatus() : connectionStatus;
   res.json({
     status: 'ok',
@@ -127,7 +127,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Database connectivity status
-app.get('/api/db-status', async (_req, res) => {
+app.get(['/api/db-status', '/db-status'], async (_req, res) => {
   try {
     const startTime = Date.now();
     const result = await pool.query('SELECT current_database() AS db, version() AS ver, NOW() AS now');
@@ -151,7 +151,7 @@ app.get('/api/db-status', async (_req, res) => {
 });
 
 // Public Stats endpoint (real-time data for homepage screen)
-app.get('/api/public/stats', async (req, res, next) => {
+app.get(['/api/public/stats', '/public/stats'], async (req, res, next) => {
   try {
     const [deptCount, studentCount, facultyCount, docCount, ocrCount, storageSum] = await Promise.all([
       pool.query('SELECT COUNT(*)::int AS count FROM departments'),

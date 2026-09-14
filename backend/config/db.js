@@ -15,38 +15,38 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-// Setup resilient DNS fallback resolver:
-// Local router/campus Wi-Fi DNS servers frequently return RCODE_REFUSED or ENOTFOUND for *.neon.tech domains.
-// We intercept dns.lookup and fall back to public DNS (8.8.8.8 / 1.1.1.1) if the local resolver fails.
-const publicResolver = new dns.promises.Resolver();
-publicResolver.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+// Setup resilient DNS fallback resolver (for local development on restricted networks):
+if (!process.env.VERCEL) {
+  const publicResolver = new dns.promises.Resolver();
+  publicResolver.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
 
-const origLookup = dns.lookup;
-dns.lookup = function (hostname, options, callback) {
-  let opts = options;
-  let cb = callback;
-  if (typeof opts === 'function') {
-    cb = opts;
-    opts = {};
-  }
-  origLookup(hostname, opts, (err, address, family) => {
-    if (err && (err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN' || err.code === 'EREFUSED')) {
-      publicResolver.resolve4(hostname)
-        .then((addresses) => {
-          if (!addresses || addresses.length === 0) {
-            return cb(err);
-          }
-          if (opts && opts.all) {
-            return cb(null, addresses.map((a) => ({ address: a, family: 4 })));
-          }
-          return cb(null, addresses[0], 4);
-        })
-        .catch(() => cb(err));
-      return;
+  const origLookup = dns.lookup;
+  dns.lookup = function (hostname, options, callback) {
+    let opts = options;
+    let cb = callback;
+    if (typeof opts === 'function') {
+      cb = opts;
+      opts = {};
     }
-    return cb(err, address, family);
-  });
-};
+    origLookup(hostname, opts, (err, address, family) => {
+      if (err && (err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN' || err.code === 'EREFUSED')) {
+        publicResolver.resolve4(hostname)
+          .then((addresses) => {
+            if (!addresses || addresses.length === 0) {
+              return cb(err);
+            }
+            if (opts && opts.all) {
+              return cb(null, addresses.map((a) => ({ address: a, family: 4 })));
+            }
+            return cb(null, addresses[0], 4);
+          })
+          .catch(() => cb(err));
+        return;
+      }
+      return cb(err, address, family);
+    });
+  };
+}
 
 const { Pool } = pg;
 
@@ -62,7 +62,7 @@ const mode = rawDbMode === 'local'
 const onlineConfig = {
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }, // required for Neon / AWS RDS / Supabase
-  max: 10,
+  max: process.env.VERCEL ? 3 : 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
 };
@@ -135,8 +135,8 @@ async function testAndReportConnection() {
 
     console.error(`❌  Database connection FAILED (${activeMode} mode):`, err.message);
 
-    // If online mode failed and local config is available, attempt fallback
-    if (activeMode === 'online' && rawDbMode !== 'strict_online') {
+    // If online mode failed and local config is available, attempt fallback (local dev only)
+    if (activeMode === 'online' && rawDbMode !== 'strict_online' && !process.env.VERCEL) {
       console.log('🔄  Attempting automatic fallback to Local PostgreSQL (localhost:5432)…');
       try {
         const localPool = new Pool(localConfig);
