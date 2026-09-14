@@ -168,7 +168,7 @@ NODE_ENV=development
 DB_MODE=online
 
 # Online Neon Cloud PostgreSQL Connection String
-DATABASE_URL=postgresql://neondb_owner:npg_TIPGfuD4JKc0@ep-wispy-bar-aepcgkbs-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql://neondb_owner:npg_r8s2wNoTPpCi@ep-purple-silence-aek05l1i-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
 
 # JWT Configuration
 JWT_SECRET=crddms_jwt_secret_key_2026

@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import dns from 'dns';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,6 +14,37 @@ const __dirname = path.dirname(__filename);
 // Explicitly load .env from backend directory and process cwd
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+// Setup resilient DNS fallback resolver for *.neon.tech domains:
+const publicResolver = new dns.promises.Resolver();
+publicResolver.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
+
+const origLookup = dns.lookup;
+dns.lookup = function (hostname, options, callback) {
+  let opts = options;
+  let cb = callback;
+  if (typeof opts === 'function') {
+    cb = opts;
+    opts = {};
+  }
+  origLookup(hostname, opts, (err, address, family) => {
+    if (err && (err.code === 'ENOTFOUND' || err.code === 'EAI_AGAIN' || err.code === 'EREFUSED')) {
+      publicResolver.resolve4(hostname)
+        .then((addresses) => {
+          if (!addresses || addresses.length === 0) {
+            return cb(err);
+          }
+          if (opts && opts.all) {
+            return cb(null, addresses.map((a) => ({ address: a, family: 4 })));
+          }
+          return cb(null, addresses[0], 4);
+        })
+        .catch(() => cb(err));
+      return;
+    }
+    return cb(err, address, family);
+  });
+};
 
 const { Pool } = pg;
 
