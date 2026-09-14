@@ -155,9 +155,9 @@ clgproject/
 
 CRDDMS supports **Dual-Mode Database Architecture**: seamless operation with either the **Online Cloud Database (Neon PostgreSQL)** or a **Local PostgreSQL** instance, with automated diagnostics and graceful fallback.
 
-### 🌐 Option A: Online Cloud Database (Neon PostgreSQL) — Default & Ready
+### 🌐 Option A: Online Cloud Database (Supabase / Cloud PostgreSQL) — Default & Ready
 
-The system comes pre-configured to connect to the institutional Neon Cloud PostgreSQL database with SSL encryption. No local database installation is needed.
+The system supports connecting to your cloud PostgreSQL database (Supabase / Neon) with SSL encryption. No local database installation is needed.
 
 **backend/.env** (and root `.env`):
 ```env
@@ -167,8 +167,8 @@ NODE_ENV=development
 # Database Mode: 'online' | 'local' | 'auto'
 DB_MODE=online
 
-# Online Neon Cloud PostgreSQL Connection String
-DATABASE_URL=postgresql://neondb_owner:npg_r8s2wNoTPpCi@ep-purple-silence-aek05l1i-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+# Online Cloud PostgreSQL Connection String (Supabase / Neon)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.kzcyvijpugwivmvwffjs.supabase.co:5432/postgres
 
 # JWT Configuration
 JWT_SECRET=crddms_jwt_secret_key_2026
