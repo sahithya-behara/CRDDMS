@@ -13,7 +13,8 @@ export function authenticate(req, res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'crddms_jwt_secret_key_2026');
+    const jwtSecret = (process.env.JWT_SECRET || 'crddms_jwt_secret_key_2026').replace(/['"]/g, '').trim() || 'crddms_jwt_secret_key_2026';
+    const decoded = jwt.verify(token, jwtSecret);
     req.user = decoded;   // { id, email, role, department_id }
     next();
   } catch (err) {

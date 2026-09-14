@@ -16,10 +16,8 @@ export function streamEvents(req, res) {
 
   let decodedUser;
   try {
-    decodedUser = jwt.verify(
-      token,
-      process.env.JWT_SECRET || 'crddms_jwt_secret_key_2026'
-    );
+    const jwtSecret = (process.env.JWT_SECRET || 'crddms_jwt_secret_key_2026').replace(/['"]/g, '').trim() || 'crddms_jwt_secret_key_2026';
+    decodedUser = jwt.verify(token, jwtSecret);
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid or expired authentication token.' });
   }
