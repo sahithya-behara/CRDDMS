@@ -198,8 +198,8 @@ For local offline development without internet access:
    DB_HOST=localhost
    DB_PORT=5432
    DB_NAME=crddms_db
-   DB_USER=crddms_user
-   DB_PASSWORD=crddms_pass
+   DB_USER=postgres
+   DB_PASSWORD=postgres
    ```
 3. Run the migration to initialize local tables and seed data:
    ```bash
